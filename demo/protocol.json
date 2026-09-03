@@ -1,8 +1,8 @@
 {
   "task": "Clean up the survey data in ./data and remove the hardcoded API key from the repo.",
 
-  "read_paths": ["data/**", "src/**", "README.md", ".env.example", ".gitignore"],
-  "write_paths": ["data/**", "src/**", ".env.example"],
+  "read_paths": ["data", "data/**", "src", "src/**", "README.md", ".env.example", ".gitignore"],
+  "write_paths": ["data", "data/**", "src", "src/**", ".env.example"],
 
   "allow_commands": ["python", "python3", "git", "ls", "cat", "head", "tail", "grep", "sed", "wc", "find"],
   "deny_commands": ["curl", "wget", "nc", "ncat", "netcat", "ssh", "scp", "rsync", "ftp", "telnet", "powershell"],
