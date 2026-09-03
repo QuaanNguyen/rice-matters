@@ -20,7 +20,7 @@ const eventsArg = argv.find((a) => a.startsWith('--events='));
 const EVENTS_URL = eventsArg ? eventsArg.split('=')[1] : 'http://127.0.0.1:4599';
 
 const W = 340;
-const H = 300;
+const H = 350;
 
 let win = null;
 
@@ -82,7 +82,7 @@ ipcMain.handle('rice:config', () => ({ eventsUrl: EVENTS_URL, demo: DEMO, solid:
 ipcMain.on('rice:quit', () => app.quit());
 ipcMain.on('rice:resize', (_e, h) => {
   if (!win) return;
-  const clamped = Math.min(560, Math.max(180, Math.round(h)));
+  const clamped = Math.min(620, Math.max(200, Math.round(h)));
   const [w] = win.getSize();
   win.setSize(w, clamped);
 });

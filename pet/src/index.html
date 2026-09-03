@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div id="app" class="state-offline mood-content">
+  <div id="app" class="state-offline">
 
     <div id="bubble" class="bubble" hidden>
       <div class="bubble-line" id="bubble-text">…</div>
@@ -18,29 +18,88 @@
 
     <div id="pet" class="pet" title="Rice">
       <div class="aura"></div>
-      <svg id="grain" viewBox="0 0 120 150" width="120" height="150" aria-hidden="true">
+
+      <!-- The bowl stays put. The grain moves inside it. That is why the bowl
+           is in two layers: back rim, grain, then front of the bowl on top. -->
+      <svg id="scene" viewBox="0 0 120 176" width="132" height="194" aria-hidden="true">
         <defs>
-          <linearGradient id="body" x1="0.2" y1="0" x2="0.85" y2="1">
-            <stop offset="0" stop-color="#ffffff"/>
-            <stop offset="0.55" stop-color="#f7f2e6"/>
-            <stop offset="1" stop-color="#e4dbc7"/>
+          <linearGradient id="grainFill" x1="0.18" y1="0.02" x2="0.9" y2="0.98">
+            <stop offset="0"    stop-color="#ffffff"/>
+            <stop offset="0.45" stop-color="#fbf7ec"/>
+            <stop offset="1"    stop-color="#e6dcc6"/>
           </linearGradient>
-          <radialGradient id="sheen" cx="0.35" cy="0.28" r="0.5">
+          <radialGradient id="grainSheen" cx="0.33" cy="0.24" r="0.46">
             <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
             <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
           </radialGradient>
-          <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
-            <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#0b1a14" flood-opacity="0.35"/>
+          <linearGradient id="bowlFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0"   stop-color="#dcebe4"/>
+            <stop offset="0.55" stop-color="#b9d2c8"/>
+            <stop offset="1"   stop-color="#93b3a7"/>
+          </linearGradient>
+          <linearGradient id="rimFill" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0"   stop-color="#eef5f1"/>
+            <stop offset="0.5" stop-color="#d7e7df"/>
+            <stop offset="1"   stop-color="#c2d8ce"/>
+          </linearGradient>
+          <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+            <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#0b1a14" flood-opacity="0.32"/>
           </filter>
         </defs>
 
-        <g id="grain-body" filter="url(#soft)">
-          <path d="M60 6 C88 6 106 40 106 78 C106 116 86 144 60 144 C34 144 14 116 14 78 C14 40 32 6 60 6 Z"
-                fill="url(#body)" stroke="#cbbfa6" stroke-width="1.5"/>
-          <ellipse cx="48" cy="44" rx="24" ry="30" fill="url(#sheen)"/>
+        <!-- back of the rim, so the grain appears to sit down inside -->
+        <g class="bowl-back">
+          <ellipse cx="60" cy="132" rx="53" ry="12" fill="#9db9ae"/>
+          <ellipse cx="60" cy="132" rx="46" ry="9" fill="#7d9c90"/>
         </g>
 
-        <g id="face"></g>
+        <!-- two more grains, mostly buried. they do a lot of work: one shape is
+             ambiguous, three in a bowl are unmistakably rice -->
+        <g class="side-grains">
+          <path d="M20 142 c-3 -7 -2 -14 3 -16 c5 -2 9 3 8 9 c-1 6 -4 10 -7 10 z"
+                fill="#f3ecdc" stroke="#cdbfa4" stroke-width="1.1" transform="rotate(-34 21 136)"/>
+          <path d="M100 142 c3 -7 2 -14 -3 -16 c-5 -2 -9 3 -8 9 c1 6 4 10 7 10 z"
+                fill="#f6f0e2" stroke="#cdbfa4" stroke-width="1.1" transform="rotate(32 99 136)"/>
+          <path d="M38 144 c-3 -6 -2 -13 3 -15 c5 -2 8 3 7 8 c-1 5 -4 9 -6 9 z"
+                fill="#efe7d4" stroke="#cdbfa4" stroke-width="1" transform="rotate(-14 39 139)"/>
+          <path d="M82 144 c3 -6 2 -13 -3 -15 c-5 -2 -8 3 -7 8 c1 5 4 9 6 9 z"
+                fill="#f1e9d8" stroke="#cdbfa4" stroke-width="1" transform="rotate(12 81 139)"/>
+        </g>
+
+        <!-- the grain itself: narrow, tilted, creased, with the germ notch -->
+        <g id="grain" class="grain">
+          <g transform="rotate(-5 60 78)" filter="url(#soft)">
+            <path class="grain-body"
+                  d="M60 6
+                     C78 6 92 30 92 62
+                     C92 96 79 132 60 132
+                     C41 132 28 96 28 62
+                     C28 30 42 6 60 6 Z"
+                  fill="url(#grainFill)" stroke="#cbbfa6" stroke-width="1.5"/>
+            <ellipse cx="49" cy="40" rx="15" ry="24" fill="url(#grainSheen)"/>
+            <!-- the crease that runs down a grain of rice -->
+<path d="M67 20 C74 46 74 100 66 124" stroke="#e0d5bd" stroke-width="1.5"
+                  fill="none" stroke-linecap="round" opacity=".7"/>
+            <path d="M52 24 C47 48 47 96 53 120" stroke="#e6ddc8" stroke-width="1.1"
+                  fill="none" stroke-linecap="round" opacity=".45"/>
+            <!-- the germ: the little blunt notch at the base -->
+            <path d="M53 128 q7 6 14 0" stroke="#d6c9ae" stroke-width="1.8"
+                  fill="none" stroke-linecap="round" opacity=".8"/>
+            <g id="face" transform="translate(0 -10)"></g>
+          </g>
+        </g>
+
+        <!-- front of the bowl, drawn over the grain -->
+        <g class="bowl-front">
+          <path d="M7 132 C10 160 32 174 60 174 C88 174 110 160 113 132 Z" fill="url(#bowlFill)"/>
+          <path d="M7 132 C10 160 32 174 60 174 C88 174 110 160 113 132"
+                fill="none" stroke="#7d9c90" stroke-width="1.4"/>
+          <path d="M7 132 a53 12 0 0 0 106 0" fill="url(#rimFill)"/>
+          <path d="M7 132 a53 12 0 0 0 106 0" fill="none" stroke="#7d9c90" stroke-width="1.4"/>
+          <path d="M19 145 C22 161 36 170 54 171" fill="none" stroke="#ffffff"
+                stroke-opacity=".45" stroke-width="3" stroke-linecap="round"/>
+          <path d="M16 152 h88" fill="none" stroke="#7d9c90" stroke-opacity=".35" stroke-width="1.2"/>
+        </g>
       </svg>
     </div>
 

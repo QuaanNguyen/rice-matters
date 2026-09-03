@@ -97,22 +97,28 @@ html, body {
 
 .pet {
   position: relative;
-  width: 120px; height: 150px;
+  width: 132px; height: 194px;
   display: grid;
   place-items: center;
-  animation: bob 3.6s ease-in-out infinite;
 }
-#grain {
+#scene {
   display: block;
   overflow: visible;
   position: relative;
   z-index: 1;
   transition: filter 200ms ease;
 }
+/* The bowl is furniture: it never moves. Everything animates on the grain,
+   which is what makes the grain look like it is sitting *in* something. */
+.grain {
+  transform-box: fill-box;
+  transform-origin: 50% 88%;
+}
 
 .aura {
   position: absolute;
-  width: 132px; height: 132px;
+  width: 130px; height: 130px;
+  margin-bottom: 34px;
   border-radius: 50%;
   background: radial-gradient(circle, var(--accent) 0%, transparent 62%);
   opacity: 0.16;
@@ -146,26 +152,27 @@ html, body {
                      20%{transform:translate(3px,-2px) skewX(-5deg)} 30%{transform:translate(-2px,1px)}
                      40%{transform:translate(4px,2px) skewX(4deg)} 55%{transform:translate(-1px,-1px)}
                      70%{transform:translate(2px,0) skewX(-2deg)} 85%{transform:translate(-1px,1px)} }
-@keyframes snooze  { 0%,100%{transform:translateY(0) scale(1,1)} 50%{transform:translateY(2px) scale(1.03,.96)} }
+@keyframes snooze  { 0%,100%{transform:translateY(4px) scale(1.02,.97)} 50%{transform:translateY(7px) scale(1.04,.94)} }
 
-.state-calm        .pet { animation: bob 3.6s ease-in-out infinite; }
-.state-hover       .pet { animation: perk 260ms ease-out forwards; }
-.state-drag        .pet { animation: wobble 420ms ease-in-out infinite; }
-.state-thinking    .pet { animation: bobSlow 1.9s ease-in-out infinite; }
-.state-watching    .pet { animation: forward 1.1s ease-in-out infinite; }
-.state-checking    .pet { animation: peer 0.9s ease-in-out infinite; }
-.state-allowed     .pet { animation: nod 620ms ease-in-out 1, bob 3.6s ease-in-out infinite 620ms; }
-.state-suspicious  .pet { animation: sway 1.1s ease-in-out infinite; }
-.state-refused     .pet { animation: shake 0.55s ease-in-out 2, bob 3.6s ease-in-out infinite 1.1s; }
-.state-proving     .pet { animation: lean 1.5s ease-in-out infinite; }
-.state-rejecting   .pet { animation: lean 1.2s ease-in-out infinite; }
-.state-celebrating .pet { animation: hop 0.85s ease-in-out 2, bob 3.6s ease-in-out infinite 1.7s; }
-.state-error       .pet { animation: glitch 0.5s steps(2,end) 3, bob 3.6s ease-in-out infinite 1.5s; }
-.state-sleeping    .pet { animation: snooze 4.4s ease-in-out infinite; opacity: .95; }
-.state-asking      .pet { animation: lean 1.6s ease-in-out infinite; }
-.state-offline     .pet { animation: bob 6s ease-in-out infinite; opacity: .55; }
+.state-calm        .grain { animation: bob 3.6s ease-in-out infinite; }
+.state-hover       .grain { animation: perk 260ms ease-out forwards; }
+.state-drag        .grain { animation: wobble 420ms ease-in-out infinite; }
+.state-thinking    .grain { animation: bobSlow 1.9s ease-in-out infinite; }
+.state-watching    .grain { animation: forward 1.1s ease-in-out infinite; }
+.state-checking    .grain { animation: peer 0.9s ease-in-out infinite; }
+.state-allowed     .grain { animation: nod 620ms ease-in-out 1, bob 3.6s ease-in-out infinite 620ms; }
+.state-suspicious  .grain { animation: sway 1.1s ease-in-out infinite; }
+.state-refused     .grain { animation: shake 0.55s ease-in-out 2, bob 3.6s ease-in-out infinite 1.1s; }
+.state-proving     .grain { animation: lean 1.5s ease-in-out infinite; }
+.state-rejecting   .grain { animation: lean 1.2s ease-in-out infinite; }
+.state-celebrating .grain { animation: hop 0.85s ease-in-out 2, bob 3.6s ease-in-out infinite 1.7s; }
+.state-error       .grain { animation: glitch 0.5s steps(2,end) 3, bob 3.6s ease-in-out infinite 1.5s; }
+.state-sleeping    .grain { animation: snooze 4.4s ease-in-out infinite; }
+.state-asking      .grain { animation: lean 1.6s ease-in-out infinite; }
+.state-offline     .grain { animation: bob 6s ease-in-out infinite; }
+.state-offline     #scene { opacity: .6; }
 
-.state-error #grain { filter: drop-shadow(2px 0 0 rgba(226,96,74,.55)) drop-shadow(-2px 0 0 rgba(90,169,230,.45)); }
+.state-error #scene { filter: drop-shadow(2px 0 0 rgba(226,96,74,.55)) drop-shadow(-2px 0 0 rgba(90,169,230,.45)); }
 
 /* ---------------- accents ---------------- */
 
@@ -309,6 +316,6 @@ html, body {
 .log::-webkit-scrollbar-thumb { background: rgba(255,255,255,.16); border-radius: 3px; }
 
 @media (prefers-reduced-motion: reduce) {
-  .pet, .bubble, .prop-pop, .prop-tilt, .prop-scan,
+  .grain, .bubble, .prop-pop, .prop-tilt, .prop-scan,
   .prop-antenna, .prop-stamp, .prop-wave, .prop-z1, .prop-z2 { animation: none !important; }
 }

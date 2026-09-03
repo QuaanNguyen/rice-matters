@@ -15,10 +15,15 @@ When it **finishes**, it simply says so. That is the whole verification step.
 ASSAY sits between your agent and ASU AIR and asks both questions. Rice is the
 face on the answer.
 
+![Rice, calm](docs/rice-calm.png)
+
 ![Rice's states](docs/rice-states.png)
 
 Fourteen agent-driven states, plus hover and drag. Silence is the resting
 state: routine allowed actions get a nod and nothing more.
+
+The bowl never moves — everything animates on the grain, which is what makes
+it look like it is sitting *in* something rather than floating above it.
 
 ---
 

@@ -100,8 +100,8 @@ const receipt = () => `
 /** a pulsing antenna while we wait on the model */
 const antenna = () => `
   <g class="prop-antenna">
-    <path d="M60 8 v-14" stroke="${INK}" stroke-width="2.2" stroke-linecap="round"/>
-    <circle cx="60" cy="-18" r="5" fill="#5aa9e6"/>
+    <path d="M60 18 v-14" stroke="${INK}" stroke-width="2.2" stroke-linecap="round"/>
+    <circle cx="60" cy="-2" r="5" fill="#5aa9e6"/>
   </g>`;
 
 const sparkle = (x, y, s = 1, colour = '#58d68d', o = 0.9) =>
