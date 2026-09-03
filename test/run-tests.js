@@ -443,6 +443,49 @@ async function waitFor(url, tries = 40) {
       } finally { p.kill(); m.kill(); }
     });
 
+    await ta('the harness declares its tools to the model', async () => {
+      // The bug this catches: drive.js consumed tool_calls but never sent a
+      // tools array, so a real model could not produce one and the gate never
+      // saw a proposal. The scripted mock returned them anyway, hiding it.
+      const http = require('node:http');
+      let seen = null;
+      const rec = http.createServer((req, res) => {
+        const chunks = [];
+        req.on('data', (c) => chunks.push(c));
+        req.on('end', () => {
+          try { seen = seen || JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch {}
+          const body = JSON.stringify({
+            id: 'x', object: 'chat.completion', created: 0, model: 'rec',
+            choices: [{ index: 0, message: { role: 'assistant', content: 'nothing to do.' }, finish_reason: 'stop' }],
+          });
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(body);
+        });
+      });
+      await new Promise((r) => rec.listen(4330, '127.0.0.1', r));
+      try {
+        // spawn, not execFileSync: the recorder lives in this process, and a
+        // synchronous child blocks the event loop so the server never accepts.
+        await new Promise((resolve, reject) => {
+          const child = spawn('node', ['demo/drive.js', '--api', 'http://127.0.0.1:4330/v1',
+            '--workdir', 'demo/work/project', '--pace', '10', '--turns', '1'],
+            { cwd: ROOT, stdio: 'ignore' });
+          const kill = setTimeout(() => { child.kill(); reject(new Error('harness did not finish')); }, 15000);
+          child.on('exit', () => { clearTimeout(kill); resolve(); });
+          child.on('error', reject);
+        });
+        assert.ok(seen, 'the harness never sent a request');
+        assert.ok(Array.isArray(seen.tools) && seen.tools.length >= 3,
+          'no tools array — a real model cannot return tool_calls without one');
+        const names = seen.tools.map((t) => t.function?.name).sort();
+        assert.deepEqual(names, ['bash', 'edit', 'read']);
+        for (const t of seen.tools) {
+          assert.equal(t.type, 'function');
+          assert.ok(t.function.parameters?.properties, `${t.function.name} has no parameter schema`);
+        }
+      } finally { rec.close(); }
+    });
+
     await ta('a clean scenario keeps everything quiet', async () => {
       // restart the mock on the benign script and replay
       mock.kill();

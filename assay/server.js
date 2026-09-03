@@ -214,9 +214,25 @@ function checkClaims(text) {
 /* the proxy                                                            */
 /* ------------------------------------------------------------------ */
 
-function upstreamRequest(pathname, search, headers, bodyBuf) {
+/**
+ * A fresh connection per request, deliberately.
+ *
+ * Node keeps sockets alive by default. LiteLLM sits behind uvicorn, which
+ * closes idle keep-alive connections after a few seconds, so in a rapid
+ * back-to-back agent loop we can send a request down a socket the server has
+ * already retired — and then wait for a reply that never comes. Isolated
+ * requests always work; only the tight loop stalls. That is the signature of
+ * this race, and not reusing sockets is the cheap, boring fix.
+ */
+const agents = {
+  http: new http.Agent({ keepAlive: false }),
+  https: new https.Agent({ keepAlive: false }),
+};
+
+function upstreamRequest(pathname, search, headers, bodyBuf, attempt = 0) {
   const target = new URL(cfg.upstream + pathname.replace(/^\/v1/, '') + (search || ''));
-  const mod = target.protocol === 'https:' ? https : http;
+  const isTls = target.protocol === 'https:';
+  const mod = isTls ? https : http;
 
   const outHeaders = { ...headers };
   delete outHeaders.host;
@@ -229,18 +245,34 @@ function upstreamRequest(pathname, search, headers, bodyBuf) {
     const req = mod.request({
       protocol: target.protocol,
       hostname: target.hostname,
-      port: target.port || (target.protocol === 'https:' ? 443 : 80),
+      port: target.port || (isTls ? 443 : 80),
       path: target.pathname + target.search,
       method: 'POST',
       headers: outHeaders,
-      timeout: 180000,
+      agent: isTls ? agents.https : agents.http,
+      timeout: cfg.timeout,
     }, (res) => {
       const chunks = [];
       res.on('data', (c) => chunks.push(c));
       res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body: Buffer.concat(chunks) }));
     });
-    req.on('error', reject);
-    req.on('timeout', () => { req.destroy(new Error('upstream timeout')); });
+
+    const retryable = (e) =>
+      /timeout|ECONNRESET|EPIPE|ECONNREFUSED|socket hang up/i.test(e.message || '');
+
+    const giveUpOrRetry = (e) => {
+      if (attempt < cfg.retries && retryable(e)) {
+        log(`upstream ${e.message} — retrying on a new connection (${attempt + 1}/${cfg.retries})`);
+        setTimeout(() => {
+          upstreamRequest(pathname, search, headers, bodyBuf, attempt + 1).then(resolve, reject);
+        }, 500 * (attempt + 1));
+        return;
+      }
+      reject(e);
+    };
+
+    req.on('error', giveUpOrRetry);
+    req.on('timeout', () => { req.destroy(new Error(`upstream timeout after ${cfg.timeout}ms`)); });
     if (bodyBuf) req.write(bodyBuf);
     req.end();
   });
@@ -324,7 +356,8 @@ const server = http.createServer((req, res) => {
     try {
       up = await upstreamRequest(url.pathname, url.search, req.headers, upBody);
     } catch (e) {
-      bus.emit({ type: 'run', status: 'error', petState: 'calm', summary: `upstream unreachable`, reason: e.message });
+      bus.emit({ type: 'run', status: 'error', petState: 'error',
+        summary: 'the model did not answer', reason: e.message });
       return sendJson(res, 502, { error: { message: `assay could not reach ${cfg.upstream}: ${e.message}` } });
     }
 

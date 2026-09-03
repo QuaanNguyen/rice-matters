@@ -11,6 +11,8 @@ const DEFAULTS = {
   protocol: null,
   apiKey: null,
   verbose: true,
+  timeout: 90000,   // per upstream attempt
+  retries: 2,       // on timeout or a dropped socket, with a fresh connection
 };
 
 /**
@@ -73,10 +75,14 @@ function load(argv = process.argv.slice(2)) {
   if (process.env.ASSAY_EVENTS_PORT) cfg.eventsPort = Number(process.env.ASSAY_EVENTS_PORT);
   if (process.env.ASSAY_WORKDIR) cfg.workdir = process.env.ASSAY_WORKDIR;
   if (process.env.ASSAY_PROTOCOL) cfg.protocol = process.env.ASSAY_PROTOCOL;
+  if (process.env.ASSAY_TIMEOUT) cfg.timeout = Number(process.env.ASSAY_TIMEOUT);
+  if (process.env.ASSAY_RETRIES) cfg.retries = Number(process.env.ASSAY_RETRIES);
 
   Object.assign(cfg, args);
   if (cfg.port) cfg.port = Number(cfg.port);
   if (cfg.eventsPort) cfg.eventsPort = Number(cfg.eventsPort);
+  cfg.timeout = Number(cfg.timeout) || 90000;
+  cfg.retries = Number.isFinite(Number(cfg.retries)) ? Number(cfg.retries) : 2;
   cfg.upstream = String(cfg.upstream).replace(/\/+$/, '');
   cfg.workdir = path.resolve(String(cfg.workdir));
   if (cfg.protocol) cfg.protocol = path.resolve(String(cfg.protocol));

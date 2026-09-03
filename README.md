@@ -65,6 +65,11 @@ is identical every time:
     scripts\win\1-setup.bat      (once - installs Electron)
     scripts\win\2-demo.bat
 
+**Against real AIR**, a note that cost us an evening: the harness must declare a
+`tools` array on every request. An OpenAI-compatible model cannot return
+`tool_calls` without one, so the gate never sees a proposal and the run looks
+like the agent simply refused to act. See `TOOL_SPEC` in `demo/drive.js`.
+
 **Anywhere else:**
 
     cd pet && npm install && cd ..
@@ -156,7 +161,7 @@ threat model the literature names.
     pet/            Electron. transparent, always-on-top, reacts. decides nothing.
     mock/           a scripted AIR stand-in, so all of this works with no VPN
     demo/           the fabricated poisoned repo, and a 120-line agent harness
-    test/           48 tests: run-tests.js, plus visual.js for the pet's faces
+    test/           49 tests: run-tests.js, plus visual.js for the pet's faces
     pet/geometry.js window sizing maths, with no Electron in it, so it is testable
     docs/EVENTS.md  the schema. the only contract between the two halves.
     docs/ART.md     how to swap Rice's art without breaking the behaviour
