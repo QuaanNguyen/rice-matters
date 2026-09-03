@@ -437,15 +437,19 @@ t('session start publishes the protocol and a calm run event', () => {
 
 console.log('\nglobal bind');
 
-t('install writes RICE_ROOT into the global plugin copy', () => {
+t('install materializes a self-contained rice package', () => {
   assert.ok(fs.existsSync(path.join(ROOT, 'plugin', 'rice.js')));
   const destDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rice-bind-'));
-  const { dest, repoRoot } = installPlugin({ destDir, repoRoot: ROOT });
-  const body = fs.readFileSync(dest, 'utf8');
-  assert.equal(repoRoot, ROOT);
-  assert.ok(body.startsWith('process.env.RICE_ROOT'));
-  assert.ok(body.includes(JSON.stringify(ROOT)));
-  assert.ok(body.includes('export const Rice'));
+  const { dest, packageDir, petDir } = installPlugin({
+    destDir,
+    repoRoot: ROOT,
+    skipNpm: true,
+  });
+  assert.ok(fs.existsSync(dest));
+  assert.ok(fs.readFileSync(dest, 'utf8').includes('export const Rice'));
+  assert.ok(fs.existsSync(path.join(packageDir, 'assay', 'lib', 'session.js')));
+  assert.ok(fs.existsSync(path.join(petDir, 'package.json')));
+  assert.equal(fs.existsSync(path.join(petDir, 'node_modules')), false);
   fs.rmSync(destDir, { recursive: true, force: true });
 });
 

@@ -19,10 +19,17 @@ function findRepo(start) {
   return null;
 }
 
-const repoRoot = process.env.RICE_ROOT || findRepo(here);
+function resolveRoot(start) {
+  if (process.env.RICE_ROOT) return process.env.RICE_ROOT;
+  const bundled = path.join(start, "rice");
+  if (fs.existsSync(path.join(bundled, "assay/lib/session.js"))) return bundled;
+  return findRepo(start);
+}
+
+const repoRoot = resolveRoot(here);
 if (!repoRoot) {
   throw new Error(
-    "Rice cannot find assay/lib/session.js. Keep this file inside a rice-matters checkout, or set RICE_ROOT to that checkout.",
+    "Rice cannot find assay/lib/session.js. Run scripts/install-plugin (copies assay + pet next to the plugin), or set RICE_ROOT.",
   );
 }
 
@@ -102,23 +109,35 @@ function electronBinary(petDir) {
   const pkg = path.join(petDir, "node_modules/electron");
   if (!fs.existsSync(pkg)) return null;
   try {
-    return require(pkg);
+    const bin = require(pkg);
+    if (typeof bin === "string" && fs.existsSync(bin)) return bin;
   } catch {
     return null;
   }
+  return null;
 }
 
 function launchPet(inboxPath) {
   const petDir = path.join(repoRoot, "pet");
   const bin = electronBinary(petDir);
-  if (!bin) return;
+  if (!bin) {
+    console.error(
+      "[rice] Pet Rice not launched: Electron binary missing under " + petDir +
+      ". Re-run: bash scripts/install-plugin.sh",
+    );
+    return;
+  }
   const env = { ...process.env, RICE_EVENTS: inboxPath };
   delete env.ELECTRON_RUN_AS_NODE;
+  delete env.ELECTRON_SKIP_BINARY_DOWNLOAD;
   const child = spawn(bin, ["."], {
     cwd: petDir,
     detached: true,
     stdio: "ignore",
     env,
+  });
+  child.on("error", (err) => {
+    console.error("[rice] failed to launch Pet Rice:", err.message);
   });
   child.unref();
 }

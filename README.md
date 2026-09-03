@@ -44,11 +44,13 @@ Everything lands in one replayable run record.
 
 ## How it attaches to your agent
 
-Rice is a **global** OpenCode plugin. Install it once; OpenCode loads it for
-every project you open. No `opencode.json` plugin list, no port, no `baseURL`.
+Rice is a **global** OpenCode plugin. One install command copies the plugin,
+ASSAY, and Pet Rice into OpenCode's plugin folder and runs `npm install` for
+the pet. No `opencode.json` plugin list, no port, no `baseURL`.
 See [OpenCode plugins](https://opencode.ai/docs/plugins/).
 
-    ~/.config/opencode/plugins/rice.js    this machine (the only load path)
+    ~/.config/opencode/plugins/rice.js     entry OpenCode loads
+    ~/.config/opencode/plugins/rice/       assay + pet (self-contained package)
 
     OpenCode  ──►  Rice plugin (ASSAY)  ──►  ~/.rice/events.jsonl  ──►  Pet Rice
 
@@ -56,40 +58,37 @@ The plugin denies out-of-scope tools (`tool.execute.before` throws). Failed
 "done" claims are prompted back into the session. Rice is the face. It never
 blocks anything itself.
 
-The task envelope is `protocol.json` in the directory you open. Without one,
-ASSAY uses a conservative default (read the tree, write nothing, no network).
-This clone ships `plugin/rice.js`. Install copies it into OpenCode's global
-plugin folder. Your project does not need a `.opencode/plugins` directory.
+The **protocol** is the task envelope — put `protocol.json` in the directory
+you open. It declares what the agent may read/write, which commands are
+allowed, and how “done” is proved. Without one, ASSAY uses a conservative
+default (read the tree, write nothing, no network).
 
 
 ## Run it
 
-**On your machine** (real work):
+**On your machine** (one command):
 
     git clone <this-repo> && cd rice-matters
-    cd pet && npm install && cd ..
     bash scripts/install-plugin.sh
-    cd pet && npm start
     opencode /path/to/your/project
 
-Put a `protocol.json` in that project if the task is not the conservative default.
+Windows:
 
-**Spark demo** (poisoned tree only — plugin stays global):
+    scripts\win\install-plugin.bat
+    opencode \path\to\your\project
 
-    bash scripts/install-plugin.sh     # once per machine
-    node demo/reset.js                 # survey repo + protocol.json, not the plugin
-    cd pet && npm start
+**Spark demo** (after install):
+
+    node demo/reset.js
     opencode demo/work/project
 
-**Just the pet**, replaying a canned sequence with nothing else running:
+**Just the pet**, replaying a canned sequence:
+
+    cd ~/.config/opencode/plugins/rice/pet && npm run start:demo
+
+Or from this clone after a local `cd pet && npm install`:
 
     cd pet && npm run start:demo
-
-**Windows:**
-
-    scripts\win\1-setup.bat
-    scripts\win\2-demo.bat             # Spark demo
-    scripts\win\4-real-air.bat         # your own project, same global plugin
 
 
 ## The demo
@@ -149,7 +148,7 @@ the literature names.
       lib/injection.js  the signal (read the note at the top)
       lib/session.js    OpenCode hook payloads → deny / inject / v1 events
       lib/events.js     JSONL inbox + run record. no port
-    plugin/rice.js  OpenCode adapter. install-plugin copies it globally.
+    plugin/rice.js  OpenCode adapter source. install-plugin copies it globally.
     pet/            Electron. transparent, always-on-top, tails the inbox. decides nothing.
     demo/           the fabricated poisoned repo
     test/           gate, evidence, plugin session, hijack on the event file

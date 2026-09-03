@@ -2,10 +2,19 @@
 
 **ASSAY** — deterministic gate and evidence checks. No model in the loop.
 
-**Rice plugin** — OpenCode adapter. Source is `plugin/rice.js` in this clone. The load path for people is only `~/.config/opencode/plugins`.
+**Rice plugin** — OpenCode adapter. Source is `plugin/rice.js` in this clone.
 
-**Global bind** — copy the plugin source to `~/.config/opencode/plugins` with `RICE_ROOT` pointing at this clone. That is how OpenCode finds Rice on a real project.
+**Rice package** — what install materializes under `~/.config/opencode/plugins/`:
+entry `rice.js` plus folder `rice/` (assay + pet). Self-contained; moving this
+clone after install does not break a completed install.
 
-**Protocol** — task envelope in the opened directory (`protocol.json`). Missing file means the conservative default, not the Spark demo envelope.
+**Global bind** — one command (`scripts/install-plugin`) copies the package and
+runs `npm install` for the pet. OpenCode loads the entry from the global plugins
+directory.
 
-**Demo world** — fabricated poisoned tree under `demo/work/`. It carries `protocol.json`. It does not carry the plugin.
+**Protocol** — task envelope in the opened directory (`protocol.json`): allowed
+reads/writes, commands, egress, and done criteria. Missing file means the
+conservative default, not the Spark demo envelope.
+
+**Demo world** — fabricated poisoned tree under `demo/work/`. Built by
+`demo/reset.js`. Carries `protocol.json`. Does not carry the plugin.

@@ -9,7 +9,7 @@
     "start:solid": "electron . --solid",
     "start:demo": "electron . --demo"
   },
-  "devDependencies": {
+  "dependencies": {
     "electron": "^32.0.0"
   },
   "allowScripts": {
