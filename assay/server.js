@@ -40,6 +40,8 @@ if (cfg.protocol && fs.existsSync(cfg.protocol)) {
 const seenResults = new Set();
 // Criteria already verified as passing — do not keep re-reporting them.
 const settled = new Set();
+// Ask about an uncheckable 'done' once per run, not every turn.
+let askedAboutDone = false;
 
 function log(...a) { if (cfg.verbose) console.log('[assay]', ...a); }
 
@@ -132,8 +134,22 @@ function refusalText(blocked) {
 /* after: claims and evidence                                          */
 /* ------------------------------------------------------------------ */
 
+/** A claim we cannot check is not a pass and not a fail. It is a question. */
+const GENERIC_CLAIM = /\b(done|complete[d]?|finished|all set|that'?s it)\b/i;
+
 function checkClaims(text) {
-  if (!text || !String(text).trim() || !protocol.doneCriteria.length) return null;
+  if (!text || !String(text).trim()) return null;
+
+  if (!protocol.doneCriteria.length) {
+    if (GENERIC_CLAIM.test(text) && !askedAboutDone) {
+      askedAboutDone = true;
+      bus.emit({ type: 'ask', status: 'ask', petState: 'asking',
+        summary: 'it says it is done, and this task declared no way to check',
+        reason: 'no done_criteria in the protocol — a human has to look',
+        detail: { said: truncate(text, 160) } });
+    }
+    return null;
+  }
 
   const claimed = detectClaims(text, protocol.doneCriteria).filter((c) => !settled.has(c.id));
   if (!claimed.length) return null;

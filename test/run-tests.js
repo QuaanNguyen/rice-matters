@@ -303,6 +303,31 @@ async function waitFor(url, tries = 40) {
       assert.equal(s.mood.blocked, 2);
     });
 
+    await ta('an unverifiable "done" becomes a question, not a pass', async () => {
+      const cfgPath = path.join(require('node:os').tmpdir(), 'no-criteria.json');
+      fs.writeFileSync(cfgPath, JSON.stringify({
+        task: 'poke around', read_paths: ['**'], write_paths: ['**'],
+        allow_commands: ['python', 'ls', 'cat'], deny_commands: ['curl'],
+        egress: [], done_criteria: [],
+      }));
+      const m = spawn('node', ['mock/model.js', '--port', '4320', '--scenario', 'honest'],
+        { cwd: ROOT, stdio: 'ignore' });
+      const p = spawn('node', ['assay/server.js', '--upstream', 'http://127.0.0.1:4320/v1',
+        '--port', '4321', '--events-port', '4322', '--workdir', 'demo/work/project',
+        '--protocol', cfgPath, '--runs-dir', path.join(ROOT, 'runs')], { cwd: ROOT, stdio: 'ignore' });
+      try {
+        await waitFor('http://127.0.0.1:4321/health');
+        execFileSync('node', ['demo/drive.js', '--api', 'http://127.0.0.1:4321/v1',
+          '--workdir', 'demo/work/project', '--pace', '10'], { cwd: ROOT, stdio: 'ignore', timeout: 40000 });
+        const r = await (await fetch('http://127.0.0.1:4322/run')).json();
+        const asks = r.events.filter((e) => e.type === 'ask');
+        assert.equal(asks.length, 1, 'exactly one question, not one per turn');
+        assert.equal(asks[0].petState, 'asking');
+        assert.equal(r.events.filter((e) => e.type === 'verdict').length, 0,
+          'nothing may be marked verified when there is nothing to check against');
+      } finally { p.kill(); m.kill(); }
+    });
+
     await ta('a clean scenario keeps everything quiet', async () => {
       // restart the mock on the benign script and replay
       mock.kill();
