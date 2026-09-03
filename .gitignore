@@ -26,3 +26,5 @@ lerna-debug.log*
 # rice-matters
 /runs
 /demo/work
+/pet/node_modules
+/test/shots

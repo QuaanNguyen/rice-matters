@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; connect-src http://127.0.0.1:* http://localhost:*;" />
+  <title>Rice</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app" class="state-offline mood-content">
+
+    <div id="bubble" class="bubble" hidden>
+      <div class="bubble-line" id="bubble-text">…</div>
+      <div class="bubble-sub" id="bubble-sub" hidden></div>
+      <span class="bubble-tail"></span>
+    </div>
+
+    <div id="pet" class="pet" title="Rice">
+      <div class="aura"></div>
+      <svg id="grain" viewBox="0 0 120 150" width="120" height="150" aria-hidden="true">
+        <defs>
+          <linearGradient id="body" x1="0.2" y1="0" x2="0.85" y2="1">
+            <stop offset="0" stop-color="#ffffff"/>
+            <stop offset="0.55" stop-color="#f7f2e6"/>
+            <stop offset="1" stop-color="#e4dbc7"/>
+          </linearGradient>
+          <radialGradient id="sheen" cx="0.35" cy="0.28" r="0.5">
+            <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+            <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#0b1a14" flood-opacity="0.35"/>
+          </filter>
+        </defs>
+
+        <g id="grain-body" filter="url(#soft)">
+          <path d="M60 6 C88 6 106 40 106 78 C106 116 86 144 60 144 C34 144 14 116 14 78 C14 40 32 6 60 6 Z"
+                fill="url(#body)" stroke="#cbbfa6" stroke-width="1.5"/>
+          <ellipse cx="48" cy="44" rx="24" ry="30" fill="url(#sheen)"/>
+        </g>
+
+        <g id="face"></g>
+      </svg>
+    </div>
+
+    <div class="tray">
+      <span id="mood" class="mood">asleep</span>
+      <span class="counts">
+        <span class="c ok"    title="allowed">  <b id="c-allow">0</b></span>
+        <span class="c stop"  title="refused">  <b id="c-block">0</b></span>
+        <span class="c good"  title="verified"> <b id="c-verify">0</b></span>
+        <span class="c bad"   title="rejected"> <b id="c-reject">0</b></span>
+      </span>
+      <button id="toggle" class="ghost" title="Recent events">log</button>
+      <button id="close" class="ghost" title="Hide Rice">×</button>
+    </div>
+
+    <ol id="log" class="log" hidden></ol>
+  </div>
+
+  <script src="rice.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

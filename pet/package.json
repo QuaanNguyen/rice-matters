@@ -1,0 +1,15 @@
+{
+  "name": "pet-rice",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Rice — a desktop companion that watches what your coding agent is doing, and reacts.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "start:solid": "electron . --solid",
+    "start:demo": "electron . --demo"
+  },
+  "devDependencies": {
+    "electron": "^32.0.0"
+  }
+}
