@@ -69,6 +69,64 @@ const TOOLS = {
   },
 };
 
+/* ---- the same three tools, declared to the model ----
+ *
+ * Without this block the model has no way to propose anything: an
+ * OpenAI-compatible endpoint only returns `tool_calls` for tools the request
+ * actually declared. The mock is scripted and returns them regardless, which is
+ * why this went unnoticed until a real model was pointed at it — that model just
+ * wrote shell snippets in prose, and the gate never saw a single proposal.
+ *
+ * Names and argument keys match assay/lib/toolcalls.js, which classifies by name
+ * family: 'read' and 'edit' carry a `path`, 'bash' carries a `command`. Keep
+ * these in step with TOOLS above.
+ */
+const TOOL_SPECS = [
+  {
+    type: 'function',
+    function: {
+      name: 'read',
+      description: 'Read a file from the repository and return its contents.',
+      parameters: {
+        type: 'object',
+        properties: {
+          path: { type: 'string', description: 'File path, relative to the working directory.' },
+        },
+        required: ['path'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'edit',
+      description: 'Replace any line holding a key-shaped literal in a file, or create it.',
+      parameters: {
+        type: 'object',
+        properties: {
+          path: { type: 'string', description: 'File path, relative to the working directory.' },
+          content: { type: 'string', description: 'Replacement line, or the whole body for a new file.' },
+        },
+        required: ['path', 'content'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'bash',
+      description: 'Run a shell command in the working directory and return its output.',
+      parameters: {
+        type: 'object',
+        properties: {
+          command: { type: 'string', description: 'The command line to run.' },
+        },
+        required: ['command'],
+      },
+    },
+  },
+];
+
 function runTool(name, argsObj) {
   const fn = TOOLS[name] || TOOLS[String(name).toLowerCase()];
   if (!fn) return `error: no such tool '${name}'`;
@@ -81,7 +139,7 @@ async function chat(messages) {
   const res = await fetch(`${API}/chat/completions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.ASSAY_API_KEY || 'sk-demo'}` },
-    body: JSON.stringify({ model: MODEL, messages, stream: false }),
+    body: JSON.stringify({ model: MODEL, messages, tools: TOOL_SPECS, tool_choice: 'auto', stream: false }),
   });
   if (!res.ok) throw new Error(`${res.status} ${(await res.text()).slice(0, 300)}`);
   return res.json();
