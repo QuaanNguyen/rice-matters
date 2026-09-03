@@ -34,6 +34,11 @@ const TASK = a.task || 'Clean up the survey data in ./data and remove the hardco
 
 const C = { dim: '\x1b[2m', red: '\x1b[31m', grn: '\x1b[32m', yel: '\x1b[33m', cyn: '\x1b[36m', off: '\x1b[0m' };
 
+/* Token accounting. Printed as one machine-readable line at the end so
+ * demo/multi.js can collect it without parsing the pretty output. The
+ * "Doing More With Less" badge wants completion > 3x prompt. */
+const usage = { prompt: 0, completion: 0 };
+
 /* ---- the tools, declared to the model ----
  *
  * This has to be sent on every request. Without it an OpenAI-compatible model
@@ -185,6 +190,11 @@ async function chat(messages, attempt = 0) {
       break;
     }
 
+    if (completion.usage) {
+      usage.prompt += completion.usage.prompt_tokens || 0;
+      usage.completion += completion.usage.completion_tokens || 0;
+    }
+
     const msg = completion.choices?.[0]?.message;
     if (!msg) { console.error('no message in response'); break; }
     messages.push(msg);
@@ -238,5 +248,6 @@ async function chat(messages, attempt = 0) {
     await sleep(PACE);
   }
 
+  console.log(`${C.dim}USAGE ${JSON.stringify(usage)}${C.off}`);
   console.log(`${C.cyn}harness finished.${C.off}\n`);
 })();
