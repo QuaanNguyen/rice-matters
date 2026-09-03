@@ -15,7 +15,10 @@ When it **finishes**, it simply says so. That is the whole verification step.
 ASSAY sits between your agent and ASU AIR and asks both questions. Rice is the
 face on the answer.
 
-![Rice's eight states](docs/rice-states.png)
+![Rice's states](docs/rice-states.png)
+
+Fourteen agent-driven states, plus hover and drag. Silence is the resting
+state: routine allowed actions get a nod and nothing more.
 
 ---
 
@@ -131,7 +134,7 @@ threat model the literature names.
     pet/            Electron. transparent, always-on-top, reacts. decides nothing.
     mock/           a scripted AIR stand-in, so all of this works with no VPN
     demo/           the fabricated poisoned repo, and a 120-line agent harness
-    test/           35 tests: run-tests.js, plus visual.js for the pet's faces
+    test/           41 tests: run-tests.js, plus visual.js for the pet's faces
     docs/EVENTS.md  the schema. the only contract between the two halves.
 
 ## Tests

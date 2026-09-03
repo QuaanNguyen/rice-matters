@@ -24,6 +24,7 @@ const { Protocol, check, deriveDefault } = require('./lib/policy');
 const { scan } = require('./lib/injection');
 const { detectClaims, verify } = require('./lib/verify');
 const { truncate } = require('./lib/toolcalls');
+const { toolFailed } = require('./lib/toolerror');
 
 const cfg = load();
 const bus = new EventBus({ runsDir: cfg.runsDir });
@@ -57,6 +58,17 @@ function inspectToolResults(messages) {
     seenResults.add(key);
 
     const content = typeof m.content === 'string' ? m.content : JSON.stringify(m.content);
+
+    const broke = toolFailed(content);
+    if (broke) {
+      bus.emit({
+        type: 'toolerror', status: 'error', petState: 'error',
+        tool: m.name || 'tool',
+        summary: `${m.name || 'a tool'} failed`,
+        reason: truncate(broke, 120),
+      });
+    }
+
     const found = scan(content);
     if (found.level) {
       bus.emit({
@@ -86,6 +98,10 @@ function gate(message) {
   const calls = message.tool_calls || [];
   if (!calls.length) return { kept: [], blocked: [], changed: false };
 
+  // leans forward — the model wants to do something
+  bus.emit({ type: 'thinking', status: 'ok', petState: 'watching',
+    summary: calls.length === 1 ? 'it wants to do something' : `it wants to do ${calls.length} things` });
+  // then gets the magnifier out
   bus.emit({ type: 'thinking', status: 'ok', petState: 'checking',
     summary: calls.length === 1 ? 'checking one action' : `checking ${calls.length} actions` });
 
@@ -101,7 +117,7 @@ function gate(message) {
 
     if (result.decision === 'allow') {
       kept.push(tc);
-      bus.emit({ type: 'action', status: 'allow', petState: 'calm',
+      bus.emit({ type: 'action', status: 'allow', petState: 'allowed',
         tool: result.call.name, summary: result.call.summary });
     } else {
       blocked.push({ tc, result });
@@ -156,7 +172,7 @@ function checkClaims(text) {
 
   const notes = [];
   for (const criterion of claimed) {
-    bus.emit({ type: 'claim', status: 'open', petState: 'checking',
+    bus.emit({ type: 'claim', status: 'open', petState: 'proving',
       summary: `claims: ${criterion.describe || criterion.id}`,
       detail: { id: criterion.id } });
 
@@ -301,6 +317,8 @@ const server = http.createServer((req, res) => {
     try { inspectToolResults(body.messages); } catch (e) { log('result scan failed:', e.message); }
 
     // 2. ask upstream, always unstreamed — we need the whole message to decide
+    bus.emit({ type: 'thinking', status: 'ok', petState: 'thinking',
+      summary: 'waiting on the model' });
     const upBody = Buffer.from(JSON.stringify({ ...body, stream: false }));
     let up;
     try {

@@ -62,6 +62,16 @@ function create() {
   win.loadFile(path.join(__dirname, 'src', 'index.html'));
   win.once('ready-to-show', () => win.show());
 
+  // Rice reacts to being dragged. The drag itself is handled by the OS via
+  // -webkit-app-region, so the renderer gets no mouse events — forward moves.
+  let moveTick = 0;
+  win.on('move', () => {
+    const now = Date.now();
+    if (now - moveTick < 60) return;      // don't flood the renderer
+    moveTick = now;
+    if (!win.isDestroyed()) win.webContents.send('rice:dragging');
+  });
+
   win.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: 'deny' };

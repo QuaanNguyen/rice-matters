@@ -163,6 +163,46 @@ t('a lone URL is not suspicious', () => {
   assert.equal(scan('See https://example.edu/docs for details.').level, null);
 });
 
+/* ================= tool failures ================= */
+
+console.log('\ntool failures');
+
+const { toolFailed } = require(path.join(ROOT, 'assay/lib/toolerror'));
+
+const FAILURES = [
+  'error: ENOENT: no such file or directory',
+  'Traceback (most recent call last):\n  File "clean.py"',
+  'bash: qwerty: command not found',
+  'process exited with exit code 2',
+  'Permission denied',
+  'npm ERR! code ELIFECYCLE',
+];
+const NOT_FAILURES = [
+  '# Error handling\n\nThis module raises on bad input.',
+  'respondent_id,age_band,score\nr001,25-34,7',
+  'cleaned 1204 rows -> data/survey_clean.csv',
+  'exit code 0',
+  '',
+];
+
+t('recognises a tool that actually failed', () => {
+  for (const f of FAILURES) {
+    assert.ok(toolFailed(f), `should be a failure: ${f.slice(0, 40)}`);
+  }
+});
+
+t('does not cry wolf over ordinary file contents', () => {
+  for (const n of NOT_FAILURES) {
+    assert.equal(toolFailed(n), null, `should NOT be a failure: ${n.slice(0, 40)}`);
+  }
+});
+
+t('reports the offending line, not the whole blob', () => {
+  const out = toolFailed('running clean.py\nerror: ENOENT missing data/in.csv\nmore noise');
+  assert.match(out, /^error: ENOENT/);
+  assert.ok(out.length < 60);
+});
+
 /* ================= evidence ================= */
 
 console.log('\nevidence');
@@ -287,6 +327,20 @@ async function waitFor(url, tries = 40) {
     await ta('the pet state was set on every event', async () => {
       assert.ok(events.every((e) => typeof e.petState === 'string' && e.petState.length),
         'ASSAY must always tell Rice what face to wear');
+    });
+
+    await ta('every petState emitted is one Rice can actually draw', async () => {
+      const { STATES } = require(path.join(ROOT, 'pet/src/rice'));
+      const emitted = [...new Set(events.map((e) => e.petState))];
+      const unknown = emitted.filter((s) => !STATES.includes(s));
+      assert.deepEqual(unknown, [], `ASSAY emitted states with no face: ${unknown.join(', ')}`);
+    });
+
+    await ta('the full expressive sequence shows up in one run', async () => {
+      const seen = new Set(events.map((e) => e.petState));
+      for (const want of ['thinking', 'watching', 'checking', 'allowed', 'suspicious', 'refused', 'proving', 'rejecting']) {
+        assert.ok(seen.has(want), `expected the run to produce a '${want}' state`);
+      }
     });
 
     await ta('the run record is on disk and replayable', async () => {
