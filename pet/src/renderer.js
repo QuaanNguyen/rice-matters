@@ -370,7 +370,7 @@ const toggle = document.getElementById('toggle');
 toggle.addEventListener('click', () => {
   logEl.hidden = !logEl.hidden;
   toggle.textContent = logEl.hidden ? 'log' : 'hide';
-  window.rice.resize(logEl.hidden ? 350 : 560);
+  window.rice.resize(logEl.hidden ? 380 : 590);
 });
 
 /* ---------------- go ---------------- */

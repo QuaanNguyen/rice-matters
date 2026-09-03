@@ -97,7 +97,7 @@ html, body {
 
 .pet {
   position: relative;
-  width: 132px; height: 194px;
+  width: 150px; height: 225px;
   display: grid;
   place-items: center;
 }
@@ -112,13 +112,39 @@ html, body {
    which is what makes the grain look like it is sitting *in* something. */
 .grain {
   transform-box: fill-box;
-  transform-origin: 50% 88%;
+  transform-origin: 50% 94%;   /* the base of the bowl: it pivots on the table */
 }
+
+/* Steam only when it is warm and happy about it. */
+.steam { opacity: 0; transition: opacity 400ms ease; }
+.state-calm .steam,
+.state-celebrating .steam,
+.state-hover .steam,
+.state-allowed .steam { opacity: 1; animation: rise 3.4s ease-in-out infinite; }
+@keyframes rise {
+  0%   { opacity: 0;   transform: translateY(4px)  scaleY(.9) }
+  35%  { opacity: .85; }
+  100% { opacity: 0;   transform: translateY(-12px) scaleY(1.15) }
+}
+
+/* Arms. Mostly tucked in; they come out to wave and to hold things. */
+.arm { transform-box: fill-box; transform-origin: top center; opacity: .95; }
+.arm-l { transform-origin: 100% 0; }
+.arm-r { transform-origin: 0 0; }
+.state-hover .arm-r      { animation: wave 520ms ease-in-out infinite; }
+.state-celebrating .arm-l { animation: cheerL 620ms ease-in-out infinite; }
+.state-celebrating .arm-r { animation: cheerR 620ms ease-in-out infinite; }
+.state-refused .arm-r     { transform: rotate(-38deg); }
+.state-proving .arm-r     { transform: rotate(-22deg); }
+.state-sleeping .arm, .state-offline .arm { opacity: .6; }
+@keyframes wave   { 0%,100% { transform: rotate(-14deg) } 50% { transform: rotate(-52deg) } }
+@keyframes cheerL { 0%,100% { transform: rotate(18deg) }  50% { transform: rotate(46deg) } }
+@keyframes cheerR { 0%,100% { transform: rotate(-18deg) } 50% { transform: rotate(-46deg) } }
 
 .aura {
   position: absolute;
-  width: 130px; height: 130px;
-  margin-bottom: 34px;
+  width: 140px; height: 140px;
+  margin-bottom: 46px;
   border-radius: 50%;
   background: radial-gradient(circle, var(--accent) 0%, transparent 62%);
   opacity: 0.16;

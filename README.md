@@ -22,8 +22,9 @@ face on the answer.
 Fourteen agent-driven states, plus hover and drag. Silence is the resting
 state: routine allowed actions get a nod and nothing more.
 
-The bowl never moves — everything animates on the grain, which is what makes
-it look like it is sitting *in* something rather than floating above it.
+Rice is a bowl of rice: a heaped mound of grains with a face, two little arms
+that wave and hold things, and steam when it is warm and happy about it. The
+whole thing animates as one creature, pivoting on the base of the bowl.
 
 ---
 

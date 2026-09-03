@@ -20,7 +20,7 @@ const eventsArg = argv.find((a) => a.startsWith('--events='));
 const EVENTS_URL = eventsArg ? eventsArg.split('=')[1] : 'http://127.0.0.1:4599';
 
 const W = 340;
-const H = 350;
+const H = 380;
 
 let win = null;
 

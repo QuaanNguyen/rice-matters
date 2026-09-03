@@ -74,7 +74,7 @@ print("  ok  contact sheet -> test/shots/all-states.png")
   fs.mkdirSync(OUT, { recursive: true });
   const browser = await chromium.launch();
   const page = await browser.newPage({
-    viewport: { width: 340, height: 350 },
+    viewport: { width: 340, height: 380 },
     deviceScaleFactor: 2,
   });
 

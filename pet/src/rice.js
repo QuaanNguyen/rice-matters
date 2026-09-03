@@ -81,7 +81,7 @@ const magnifier = () => `
 /** a stop sign held up beside the body, never over the face */
 const shield = () => `
   <g class="prop-pop">
-    <g transform="translate(94 72)">
+    <g transform="translate(96 62)">
       <path d="M0 0 l15 -7 15 7 v11 c0 10 -8 17 -15 20 c-7 -3 -15 -10 -15 -20 z"
         fill="#e2604a" stroke="#8f2f22" stroke-width="1.8"/>
       <path d="M8 15 h14" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/>
@@ -91,17 +91,17 @@ const shield = () => `
 /** a receipt with two ticked lines and one blank — evidence being gathered */
 const receipt = () => `
   <g class="prop-tilt">
-    <rect x="90" y="76" width="30" height="38" rx="3" fill="#fdfaf2" stroke="#b9ae95" stroke-width="1.6"/>
-    <path d="M94 86 h10 M94 94 h14 M94 102 h8" stroke="#a99e86" stroke-width="1.8" stroke-linecap="round"/>
-    <path d="M110 84 l2.6 2.6 5 -6" stroke="#4cc0a5" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-    <path d="M110 100 l6 6 m0 -6 l-6 6" stroke="#d1487f" stroke-width="2.2" stroke-linecap="round"/>
+    <rect x="92" y="70" width="30" height="38" rx="3" fill="#fdfaf2" stroke="#b9ae95" stroke-width="1.6"/>
+    <path d="M96 80 h10 M96 88 h14 M96 96 h8" stroke="#a99e86" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M112 78 l2.6 2.6 5 -6" stroke="#4cc0a5" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    <path d="M112 94 l6 6 m0 -6 l-6 6" stroke="#d1487f" stroke-width="2.2" stroke-linecap="round"/>
   </g>`;
 
 /** a pulsing antenna while we wait on the model */
 const antenna = () => `
   <g class="prop-antenna">
-    <path d="M60 18 v-14" stroke="${INK}" stroke-width="2.2" stroke-linecap="round"/>
-    <circle cx="60" cy="-2" r="5" fill="#5aa9e6"/>
+    <path d="M60 60 v-16" stroke="${INK}" stroke-width="2.2" stroke-linecap="round"/>
+    <circle cx="60" cy="38" r="5" fill="#5aa9e6"/>
   </g>`;
 
 const sparkle = (x, y, s = 1, colour = '#58d68d', o = 0.9) =>
