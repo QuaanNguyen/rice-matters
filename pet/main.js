@@ -12,12 +12,15 @@
  */
 const { app, BrowserWindow, ipcMain, screen, shell } = require('electron');
 const path = require('node:path');
+const { watchInbox, defaultInboxPath } = require('../assay/lib/events');
 
 const argv = process.argv.slice(1);
 const SOLID = argv.includes('--solid');
 const DEMO = argv.includes('--demo');
 const eventsArg = argv.find((a) => a.startsWith('--events='));
-const EVENTS_URL = eventsArg ? eventsArg.split('=')[1] : 'http://127.0.0.1:4599';
+const EVENTS_FILE = eventsArg
+  ? eventsArg.split('=')[1]
+  : (process.env.RICE_EVENTS || defaultInboxPath());
 
 const W = 340;
 const H = 380;
@@ -61,6 +64,14 @@ function create() {
 
   win.loadFile(path.join(__dirname, 'src', 'index.html'));
   win.once('ready-to-show', () => win.show());
+  if (!DEMO) {
+    win.webContents.once('did-finish-load', () => {
+      const watcher = watchInbox(EVENTS_FILE, (e) => {
+        if (win && !win.isDestroyed()) win.webContents.send('rice:event', e);
+      });
+      win.on('closed', () => watcher.close());
+    });
+  }
 
   // Rice reacts to being dragged. The drag itself is handled by the OS via
   // -webkit-app-region, so the renderer gets no mouse events — forward moves.
@@ -78,7 +89,7 @@ function create() {
   });
 }
 
-ipcMain.handle('rice:config', () => ({ eventsUrl: EVENTS_URL, demo: DEMO, solid: SOLID }));
+ipcMain.handle('rice:config', () => ({ eventsFile: EVENTS_FILE, demo: DEMO, solid: SOLID }));
 ipcMain.on('rice:quit', () => app.quit());
 ipcMain.on('rice:resize', (_e, h) => {
   if (!win) return;

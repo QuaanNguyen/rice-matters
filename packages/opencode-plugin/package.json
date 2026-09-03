@@ -1,0 +1,13 @@
+{
+  "name": "opencode-rice",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Rice — OpenCode plugin that runs ASSAY and whispers to the desktop pet.",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {
+    "@opencode-ai/plugin": "beta"
+  }
+}

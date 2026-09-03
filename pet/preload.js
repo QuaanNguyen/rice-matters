@@ -9,4 +9,5 @@ contextBridge.exposeInMainWorld('rice', {
   // The OS moves the window through -webkit-app-region, so the renderer never
   // sees a mousemove. Main forwards window moves instead.
   onDrag: (fn) => ipcRenderer.on('rice:dragging', () => fn()),
+  onEvent: (fn) => ipcRenderer.on('rice:event', (_e, evt) => fn(evt)),
 });

@@ -81,13 +81,10 @@ print("  ok  contact sheet -> test/shots/all-states.png")
   // Electron's preload is not here, so stand in for it.
   await page.addInitScript(() => {
     window.rice = {
-      config: async () => ({ eventsUrl: 'http://127.0.0.1:59999', demo: false, solid: false }),
+      config: async () => ({ eventsFile: '', demo: false, solid: false }),
       quit() {}, resize() {}, open() {},
+      onEvent() {},
     };
-    // Silence the transport. Without this the failing reconnect fires
-    // onerror -> setState('offline') and stamps over whatever we posed.
-    window.EventSource = class { constructor() {} close() {} };
-    window.fetch = () => new Promise(() => {});
   });
 
   await page.goto('file://' + SRC);

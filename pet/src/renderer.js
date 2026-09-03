@@ -235,13 +235,12 @@ function drain() {
 }
 
 function handle(e) {
+  connected = true;
   nudgeAwake();
-  // the log and the counters are a record: never delayed, never dropped
   bumpCounters(e);
+  noteMood(e);
   if (e.type !== 'thinking') addLog(e);
 
-  // Collapse a run of identical consecutive states — Rice does not need to be
-  // told twice that it is waiting on the model.
   const last = queue[queue.length - 1];
   if (last && last.petState === e.petState && last.type === e.type && !speech(e)?.line) return;
 
@@ -251,53 +250,35 @@ function handle(e) {
 
 /* ---------------- mood ---------------- */
 
-async function pollMood(base) {
-  try {
-    const r = await fetch(`${base}/state`, { cache: 'no-store' });
-    if (!r.ok) return;
-    const st = await r.json();
-    const level = st.mood?.level || 'content';
-    if (rendered() !== 'sleeping' && rendered() !== 'offline') moodEl.textContent = level;
-    counters.allow.textContent = st.mood?.allowed ?? 0;
-    counters.block.textContent = st.mood?.blocked ?? 0;
-    counters.verify.textContent = st.mood?.verified ?? 0;
-    counters.reject.textContent = st.mood?.rejected ?? 0;
-  } catch { /* assay not up */ }
+let moodScore = 0;
+
+function moodLevel(score) {
+  if (score >= 2) return 'happy';
+  if (score >= 0) return 'content';
+  if (score >= -2) return 'uneasy';
+  return 'stressed';
+}
+
+function noteMood(e) {
+  if (e.type === 'excursion') moodScore -= 1;
+  if (e.type === 'verdict' && e.status === 'pass') moodScore += 1;
+  if (e.type === 'verdict' && e.status === 'fail') moodScore -= 2;
+  if (rendered() !== 'sleeping' && rendered() !== 'offline') {
+    moodEl.textContent = moodLevel(moodScore);
+  }
 }
 
 /* ---------------- transport ---------------- */
 
-function connect(base) {
-  let es, reconnectTimer = null;
-
-  const open = () => {
-    es = new EventSource(`${base}/events`);
-
-    es.onopen = () => {
-      connected = true;
-      if (baseState === 'offline') { setState('calm'); moodEl.textContent = 'watching'; }
-      nudgeAwake();
-    };
-
-    es.onmessage = (msg) => {
-      let e; try { e = JSON.parse(msg.data); } catch { return; }
-      handle(e);
-    };
-
-    es.onerror = () => {
-      es.close();
-      connected = false;
-      clearTimeout(quietTimer);
-      setState('offline');
-      moodEl.textContent = 'asleep';
-      clearTimeout(reconnectTimer);
-      reconnectTimer = setTimeout(open, 2000);
-    };
-  };
-
-  open();
-  pollMood(base);
-  setInterval(() => pollMood(base), 3000);
+function listen() {
+  if (!window.rice.onEvent) return;
+  window.rice.onEvent((e) => {
+    if (baseState === 'offline') {
+      setState('calm');
+      moodEl.textContent = 'watching';
+    }
+    handle(e);
+  });
 }
 
 /* ---------------- the person ---------------- */
@@ -386,5 +367,5 @@ scheduleGlance();
 
 window.rice.config().then((cfg) => {
   if (cfg.demo) return runDemo();
-  connect(cfg.eventsUrl.replace(/\/+$/, ''));
+  listen();
 });

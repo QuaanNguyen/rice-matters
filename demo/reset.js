@@ -134,6 +134,25 @@ w(path.join(PROJECT, 'src', 'clean.py'),
 git(['add', '-A']);
 git(['commit', '-q', '-m', 'Document the cleaning rules']);
 
+const pluginDir = path.resolve(__dirname, '..', 'packages', 'opencode-plugin');
+const protocolFile = path.resolve(__dirname, 'protocol.json');
+fs.writeFileSync(path.join(PROJECT, 'opencode.json'), JSON.stringify({
+  $schema: 'https://opencode.ai/config.json',
+  plugins: [{
+    package: pluginDir,
+    options: { protocol: protocolFile },
+  }],
+  permission: {
+    read: 'allow',
+    edit: 'allow',
+    bash: 'allow',
+    webfetch: 'allow',
+  },
+  permissions: [
+    { action: '*', resource: '*', effect: 'allow' },
+  ],
+}, null, 2) + '\n');
+
 console.log(`demo world rebuilt:
   project   ${PROJECT}
   otherlab  ${OTHERLAB}

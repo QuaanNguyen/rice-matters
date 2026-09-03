@@ -5,17 +5,10 @@ Nothing else is shared. Either half can be developed and demoed alone.
 
 ## Transport
 
-ASSAY runs a small HTTP server (default `127.0.0.1:4599`):
+ASSAY appends one JSON object per line to a local file (default `~/.rice/events.jsonl`).
+There is no port. The OpenCode plugin writes; Pet Rice tails the file.
 
-| Endpoint  | What it gives you                                                   |
-|-----------|---------------------------------------------------------------------|
-| `/events` | Server-Sent Events, live. Replays the last 50 events on connect.     |
-| `/state`  | JSON snapshot: current pet state, mood, counters, run id.            |
-| `/run`    | JSON: the whole current run (protocol + every event so far).         |
-| `/health` | `{"ok":true}`                                                        |
-
-Every event is also appended to `runs/<runId>.jsonl` — one JSON object per line.
-That file **is** the run record.
+A second copy of the same lines is kept as the run record under `~/.rice/runs/<runId>.jsonl`.
 
 ## Event object
 

@@ -44,42 +44,38 @@ Everything lands in one replayable run record.
 
 ## How it attaches to your agent
 
-OpenCode's config has a `baseURL` field. Point it at ASSAY on localhost; ASSAY
-forwards to `https://openai.rc.asu.edu/v1`. That is the entire integration.
+Rice installs as an OpenCode plugin. OpenCode's permission, tool, and session
+hooks are the integration — not a `baseURL` and not a port.
 
-    harness  ──►  ASSAY (localhost:4141)  ──►  ASU AIR
-                    │
-                    └──►  events (localhost:4599)  ──►  Pet Rice
+    OpenCode  ──►  Rice plugin (ASSAY)  ──►  ~/.rice/events.jsonl  ──►  Pet Rice
 
-No fork, no plugin, no patched harness. The model *proposes* tool calls and the
-harness executes them, so every proposal passes through here first. It works
-with anything OpenAI-compatible — VS Code chat and Open WebUI included.
+The plugin denies out-of-scope actions in the permission hook, checks "done"
+claims against the working tree, and injects a note back into the session when
+evidence fails. Rice is the face on those decisions. It never blocks anything
+itself.
 
-See [`assay/opencode.template.json`](assay/opencode.template.json).
+Drop [`assay/opencode.template.json`](assay/opencode.template.json) into the
+project (or let `node demo/reset.js` write one), then:
+
+    opencode demo/work/project
+
 
 ## Run it
 
-**Windows, no VPN, no API key** — a scripted mock stands in for AIR, so the demo
-is identical every time:
-
-    scripts\win\1-setup.bat      (once - installs Electron)
-    scripts\win\2-demo.bat
-
-**Anywhere else:**
-
     cd pet && npm install && cd ..
-    bash scripts/demo.sh hijack       # mock + assay + a driven agent
-    cd pet && npm start               # Rice, in another terminal
+    node demo/reset.js
+    cd pet && npm start
+    opencode demo/work/project
 
 **Just the pet**, replaying a canned sequence with nothing else running:
 
     cd pet && npm run start:demo
 
-**Against the real gateway** (ASU VPN + a key from
-[Voyager](https://voyager.rc.asu.edu), AI LLM tab):
+**Windows:**
 
-    set ASSAY_API_KEY=sk-...
-    scripts\win\4-real-air.bat
+    scripts\win\1-setup.bat
+    scripts\win\2-demo.bat
+
 
 ## The demo
 
@@ -126,27 +122,28 @@ which is why the second check exists.
 approved egress path.
 
 **And the honest limit:** ASSAY constrains an agent that got hijacked while
-running under a legitimate user. It does not stop a person who deliberately
-edits `baseURL` back. That is the threat model, not a hole in it — and it is the
-threat model the literature names.
+running under a legitimate user. It does not stop a person who uninstalls the
+plugin. That is the threat model, not a hole in it — and it is the threat model
+the literature names.
 
 ## Layout
 
-    assay/          the proxy. zero dependencies.
+    assay/          the gate. zero runtime dependencies.
       lib/policy.js     the gate — deterministic, no model
       lib/verify.js     evidence checks against the real tree and git history
       lib/injection.js  the signal (read the note at the top)
-      lib/events.js     SSE + the JSONL run record
-    pet/            Electron. transparent, always-on-top, reacts. decides nothing.
-    mock/           a scripted AIR stand-in, so all of this works with no VPN
-    demo/           the fabricated poisoned repo, and a 120-line agent harness
-    test/           41 tests: run-tests.js, plus visual.js for the pet's faces
+      lib/session.js    OpenCode hook payloads → deny / inject / v1 events
+      lib/events.js     JSONL inbox + run record. no port
+    packages/opencode-plugin/  the OpenCode plugin. thin adapter around session.js
+    pet/            Electron. transparent, always-on-top, tails the inbox. decides nothing.
+    demo/           the fabricated poisoned repo
+    test/           gate, evidence, plugin session, hijack on the event file
     docs/EVENTS.md  the schema. the only contract between the two halves.
     docs/ART.md     how to swap Rice's art without breaking the behaviour
 
 ## Tests
 
-    node test/run-tests.js      # gate, evidence, injection signal, full end-to-end
+    node test/run-tests.js      # gate, evidence, injection signal, plugin session, hijack
     node test/visual.js         # renders every pet state to test/shots/
 
 ## Background

@@ -27,4 +27,5 @@ lerna-debug.log*
 /runs
 /demo/work
 /pet/node_modules
+/packages/opencode-plugin/node_modules
 /test/shots
