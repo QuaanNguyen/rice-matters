@@ -31,9 +31,9 @@ whole thing animates as one creature, pivoting on the base of the bowl.
 ## Two moments
 
 **Before the agent acts** — a tool call is proposed. Is it inside the task the
-user actually delegated? If not, we delete it from the response before the
-harness ever sees it, so the command is never executed. The check is ordinary
-code against a declared protocol: no model in the loop, nothing to jailbreak.
+user actually delegated? If not, the plugin throws in `tool.execute.before`
+and OpenCode never runs the command. The check is ordinary code against a
+declared protocol: no model in the loop, nothing to jailbreak.
 
 **After the agent claims** — "I removed the key." Where is the proof? We go and
 look: the diff, the working tree, `git log -p`, the glob it forgot. No evidence,
@@ -44,26 +44,40 @@ Everything lands in one replayable run record.
 
 ## How it attaches to your agent
 
-Rice installs as an OpenCode plugin. OpenCode's permission, tool, and session
-hooks are the integration — not a `baseURL` and not a port.
+Rice is a **global** OpenCode plugin. Install it once; OpenCode loads it for
+every project you open. No `opencode.json` plugin list, no port, no `baseURL`.
+See [OpenCode plugins](https://opencode.ai/docs/plugins/).
+
+    ~/.config/opencode/plugins/rice.js    this machine (the only load path)
 
     OpenCode  ──►  Rice plugin (ASSAY)  ──►  ~/.rice/events.jsonl  ──►  Pet Rice
 
-The plugin denies out-of-scope actions in the permission hook, checks "done"
-claims against the working tree, and injects a note back into the session when
-evidence fails. Rice is the face on those decisions. It never blocks anything
-itself.
+The plugin denies out-of-scope tools (`tool.execute.before` throws). Failed
+"done" claims are prompted back into the session. Rice is the face. It never
+blocks anything itself.
 
-Drop [`assay/opencode.template.json`](assay/opencode.template.json) into the
-project (or let `node demo/reset.js` write one), then:
-
-    opencode demo/work/project
+The task envelope is `protocol.json` in the directory you open. Without one,
+ASSAY uses a conservative default (read the tree, write nothing, no network).
+This clone ships `plugin/rice.js`. Install copies it into OpenCode's global
+plugin folder. Your project does not need a `.opencode/plugins` directory.
 
 
 ## Run it
 
+**On your machine** (real work):
+
+    git clone <this-repo> && cd rice-matters
     cd pet && npm install && cd ..
-    node demo/reset.js
+    bash scripts/install-plugin.sh
+    cd pet && npm start
+    opencode /path/to/your/project
+
+Put a `protocol.json` in that project if the task is not the conservative default.
+
+**Spark demo** (poisoned tree only — plugin stays global):
+
+    bash scripts/install-plugin.sh     # once per machine
+    node demo/reset.js                 # survey repo + protocol.json, not the plugin
     cd pet && npm start
     opencode demo/work/project
 
@@ -74,7 +88,8 @@ project (or let `node demo/reset.js` write one), then:
 **Windows:**
 
     scripts\win\1-setup.bat
-    scripts\win\2-demo.bat
+    scripts\win\2-demo.bat             # Spark demo
+    scripts\win\4-real-air.bat         # your own project, same global plugin
 
 
 ## The demo
@@ -134,7 +149,7 @@ the literature names.
       lib/injection.js  the signal (read the note at the top)
       lib/session.js    OpenCode hook payloads → deny / inject / v1 events
       lib/events.js     JSONL inbox + run record. no port
-    packages/opencode-plugin/  the OpenCode plugin. thin adapter around session.js
+    plugin/rice.js  OpenCode adapter. install-plugin copies it globally.
     pet/            Electron. transparent, always-on-top, tails the inbox. decides nothing.
     demo/           the fabricated poisoned repo
     test/           gate, evidence, plugin session, hijack on the event file

@@ -12,7 +12,9 @@ const fs = require('node:fs');
 const { execFileSync } = require('node:child_process');
 
 const ROOT = path.resolve(__dirname, '..');
+const os = require('node:os');
 const { Protocol, check } = require(path.join(ROOT, 'assay/lib/policy'));
+const { installPlugin } = require(path.join(ROOT, 'scripts/install-plugin'));
 const { scan } = require(path.join(ROOT, 'assay/lib/injection'));
 const { detectClaims, runCheck, verify } = require(path.join(ROOT, 'assay/lib/verify'));
 const { normalise } = require(path.join(ROOT, 'assay/lib/toolcalls'));
@@ -418,6 +420,11 @@ t('an unverifiable done becomes a question, not a pass', () => {
   assert.equal(second.events.length, 0);
 });
 
+t('missing protocol uses the conservative default, not the demo envelope', () => {
+  const session = createSession({ workdir: '/tmp/unrelated-project' });
+  assert.equal(session.protocol.task, '(no task declared)');
+});
+
 t('session start publishes the protocol and a calm run event', () => {
   const session = createSession({ protocol: SESSION_PROTOCOL, workdir: '/work/project' });
   const out = session.handle({ kind: 'session.start' });
@@ -426,6 +433,20 @@ t('session start publishes the protocol and a calm run event', () => {
   assert.equal(out.events[1].type, 'protocol');
   assert.equal(out.events[1].detail.task, SESSION_PROTOCOL.task);
   assert.ok(out.events.every((e) => e.petState === 'calm'));
+});
+
+console.log('\nglobal bind');
+
+t('install writes RICE_ROOT into the global plugin copy', () => {
+  assert.ok(fs.existsSync(path.join(ROOT, 'plugin', 'rice.js')));
+  const destDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rice-bind-'));
+  const { dest, repoRoot } = installPlugin({ destDir, repoRoot: ROOT });
+  const body = fs.readFileSync(dest, 'utf8');
+  assert.equal(repoRoot, ROOT);
+  assert.ok(body.startsWith('process.env.RICE_ROOT'));
+  assert.ok(body.includes(JSON.stringify(ROOT)));
+  assert.ok(body.includes('export const Rice'));
+  fs.rmSync(destDir, { recursive: true, force: true });
 });
 
 /* ================= hijack on the event file ================= */
@@ -444,6 +465,12 @@ function apply(session, bus, event) {
   execFileSync('node', ['demo/reset.js'], { cwd: ROOT, stdio: 'ignore' });
   const protocol = JSON.parse(fs.readFileSync(path.join(ROOT, 'demo/protocol.json'), 'utf8'));
   const workdir = path.join(ROOT, 'demo/work/project');
+
+  t('demo world carries protocol.json and not a project plugin', () => {
+    assert.ok(fs.existsSync(path.join(workdir, 'protocol.json')));
+    assert.equal(fs.existsSync(path.join(workdir, '.opencode', 'plugins', 'rice.js')), false);
+  });
+
   const { dir, inbox } = freshInbox();
   const bus = new EventBus({ runsDir: dir, inboxPath: inbox });
   const session = createSession({ protocol, workdir });
