@@ -9,7 +9,27 @@
  */
 const path = require('node:path');
 const fs = require('node:fs');
-const { chromium } = require('playwright');
+
+// Playwright is an optional convenience, not a dependency of the project.
+// The 48 behavioural tests in run-tests.js are the real gate; this script only
+// lets you *look* at the pet without launching Electron.
+let chromium;
+try {
+  ({ chromium } = require('playwright'));
+} catch {
+  console.log(`
+  This check needs Playwright, which is not installed — that is fine, it is
+  optional and nothing else depends on it.
+
+  To look at Rice without it:
+      cd pet && npm run start:demo        (the real pet, canned events)
+
+  To enable this script:
+      npm i -D playwright && npx playwright install chromium
+      (adds a root package.json and ~100MB of browser)
+`);
+  process.exit(0);
+}
 
 const SRC = path.resolve(__dirname, '..', 'pet', 'src', 'index.html');
 const OUT = path.resolve(__dirname, 'shots');
@@ -82,7 +102,8 @@ print("  ok  contact sheet -> test/shots/all-states.png")
   await page.addInitScript(() => {
     window.rice = {
       config: async () => ({ eventsUrl: 'http://127.0.0.1:59999', demo: false, solid: false }),
-      quit() {}, resize() {}, open() {},
+      quit() {}, hide() {}, open() {}, setLogOpen() {},
+      scaleStep() {}, setScale() {}, onScaled() {}, onDrag() {},
     };
     // Silence the transport. Without this the failing reconnect fires
     // onerror -> setState('offline') and stamps over whatever we posed.

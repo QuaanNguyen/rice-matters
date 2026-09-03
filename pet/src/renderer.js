@@ -364,14 +364,44 @@ function runDemo() {
 
 /* ---------------- chrome ---------------- */
 
-document.getElementById('close').addEventListener('click', () => window.rice.quit());
+let toggleKey = 'Ctrl+Alt+R';
+
+// The X hides rather than quits, so it is always recoverable with the shortcut.
+// To actually stop Rice, Ctrl+C the terminal that started it.
+document.getElementById('close').addEventListener('click', () => window.rice.hide());
 
 const toggle = document.getElementById('toggle');
 toggle.addEventListener('click', () => {
   logEl.hidden = !logEl.hidden;
   toggle.textContent = logEl.hidden ? 'log' : 'hide';
-  window.rice.resize(logEl.hidden ? 380 : 590);
+  // Main owns the geometry: it has to grow the OS window and the zoom factor
+  // together, or the pet gets clipped at the bottom.
+  window.rice.setLogOpen(!logEl.hidden);
 });
+
+/* ---------------- size ---------------- */
+
+// Ctrl+wheel over Rice, the way every other app does it.
+window.addEventListener('wheel', (e) => {
+  if (!e.ctrlKey) return;
+  e.preventDefault();
+  window.rice.scaleStep(e.deltaY < 0 ? 1 : -1);
+}, { passive: false });
+
+// And the keyboard, when Rice happens to have focus.
+window.addEventListener('keydown', (e) => {
+  if (!(e.ctrlKey || e.metaKey)) return;
+  if (e.key === '=' || e.key === '+') { e.preventDefault(); window.rice.scaleStep(1); }
+  else if (e.key === '-' || e.key === '_') { e.preventDefault(); window.rice.scaleStep(-1); }
+  else if (e.key === '0') { e.preventDefault(); window.rice.setScale(1); }
+});
+
+// Brief confirmation, because a resize with no feedback feels like a glitch.
+if (window.rice.onScaled) {
+  window.rice.onScaled((pct) => {
+    say(`${pct}%`, pct === 100 ? null : `Ctrl+Alt+0 for normal · ${toggleKey} to hide`, 1600);
+  });
+}
 
 /* ---------------- go ---------------- */
 
@@ -385,6 +415,7 @@ scheduleBlink();
 scheduleGlance();
 
 window.rice.config().then((cfg) => {
+  if (cfg.toggleKey) toggleKey = cfg.toggleKey;
   if (cfg.demo) return runDemo();
   connect(cfg.eventsUrl.replace(/\/+$/, ''));
 });

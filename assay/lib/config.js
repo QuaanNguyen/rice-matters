@@ -13,6 +13,28 @@ const DEFAULTS = {
   verbose: true,
 };
 
+/**
+ * Read a .env beside the repo if there is one. Teammates keep hitting this:
+ * the key lives in .env (already gitignored), and nothing was reading it.
+ * Real environment variables always win over the file.
+ */
+function loadDotEnv(dir) {
+  const file = path.join(dir, '.env');
+  let raw;
+  try { raw = fs.readFileSync(file, 'utf8'); } catch { return {}; }
+  const out = {};
+  for (const line of raw.split(/\r?\n/)) {
+    const m = line.match(/^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
+    if (!m) continue;                                    // blank, or a comment
+    let v = m[2].trim();
+    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+      v = v.slice(1, -1);
+    }
+    out[m[1]] = v;
+  }
+  return out;
+}
+
 function loadJson(p) {
   try { return JSON.parse(fs.readFileSync(p, 'utf8')); }
   catch (e) { throw new Error(`could not read ${p}: ${e.message}`); }
@@ -38,6 +60,13 @@ function load(argv = process.argv.slice(2)) {
   const configFile = args.config || process.env.ASSAY_CONFIG;
   if (configFile) Object.assign(cfg, loadJson(path.resolve(configFile)));
 
+  // .env, then real environment variables, then command-line flags — each
+  // layer overrides the one before it.
+  const dotenv = { ...loadDotEnv(process.cwd()), ...loadDotEnv(path.resolve(__dirname, '..', '..')) };
+  for (const [k, v] of Object.entries(dotenv)) {
+    if (process.env[k] === undefined) process.env[k] = v;
+  }
+
   if (process.env.ASSAY_UPSTREAM) cfg.upstream = process.env.ASSAY_UPSTREAM;
   if (process.env.ASSAY_API_KEY) cfg.apiKey = process.env.ASSAY_API_KEY;
   if (process.env.ASSAY_PORT) cfg.port = Number(process.env.ASSAY_PORT);
@@ -56,4 +85,4 @@ function load(argv = process.argv.slice(2)) {
   return cfg;
 }
 
-module.exports = { load, loadJson, DEFAULTS };
+module.exports = { load, loadJson, loadDotEnv, DEFAULTS };

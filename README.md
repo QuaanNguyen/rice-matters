@@ -75,6 +75,22 @@ is identical every time:
 
     cd pet && npm run start:demo
 
+### Living with Rice
+
+| | |
+|---|---|
+| `Ctrl+Alt+R` | show / hide — works from any window |
+| `Ctrl+Alt+=` / `Ctrl+Alt+-` | bigger / smaller |
+| `Ctrl+Alt+0` | back to normal size |
+| `Ctrl` + scroll wheel over Rice | also resizes |
+| drag the body | move it anywhere |
+| `log` | the run record, live |
+| `×` | hides it — bring it back with the shortcut |
+
+Size and position are remembered between runs. Scaling stops at whatever your
+display can hold. If another app already owns `Ctrl+Alt+R`, pass
+`--shortcut="Ctrl+Alt+K"` and Rice will say so on startup.
+
 **Against the real gateway** (ASU VPN + a key from
 [Voyager](https://voyager.rc.asu.edu), AI LLM tab):
 
@@ -140,14 +156,16 @@ threat model the literature names.
     pet/            Electron. transparent, always-on-top, reacts. decides nothing.
     mock/           a scripted AIR stand-in, so all of this works with no VPN
     demo/           the fabricated poisoned repo, and a 120-line agent harness
-    test/           41 tests: run-tests.js, plus visual.js for the pet's faces
+    test/           48 tests: run-tests.js, plus visual.js for the pet's faces
+    pet/geometry.js window sizing maths, with no Electron in it, so it is testable
     docs/EVENTS.md  the schema. the only contract between the two halves.
     docs/ART.md     how to swap Rice's art without breaking the behaviour
 
 ## Tests
 
-    node test/run-tests.js      # gate, evidence, injection signal, full end-to-end
+    node test/run-tests.js      # gate, evidence, injection signal, sizing, end-to-end
     node test/visual.js         # renders every pet state to test/shots/
+                                # (needs Playwright; skips politely without it)
 
 ## Background
 

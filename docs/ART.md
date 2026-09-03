@@ -59,13 +59,21 @@ in `calm`, `hover`, `allowed`, `celebrating`) and `.arm` / `.arm-l` / `.arm-r`
 ## Working on it without running anything else
 
     cd pet && npm run start:demo     # replays a canned sequence, no ASSAY needed
-    node test/visual.js              # every state to test/shots/, plus a contact sheet
+
+That is the main loop: edit, restart, look. `test/visual.js` renders every
+state to a contact sheet, but it needs Playwright, which is deliberately not a
+dependency of this project — it will tell you how to enable it and otherwise
+skip. You do not need it.
 
 And in the running app's devtools:
 
     __rice.setState('refused')
     __rice.setInteraction('hover')
     __rice.say('line', 'sub', 99999)
+
+Rice can be resized (`Ctrl`+wheel, or `Ctrl+Alt+=`), so check your art at 0.6x
+as well as 2x. The silhouette is what survives at small sizes — that is why the
+current heap has grains breaking its outline.
 
 ## One thing that will bite
 
