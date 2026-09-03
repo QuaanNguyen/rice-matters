@@ -57,6 +57,18 @@ const LINES = {
   asking: ['I need you for this one.', 'no done_criteria in the protocol — a human has to look'],
 };
 
+/* The transport is stubbed below, so pollMood can never run and the label
+   would sit at its initial "asleep" for every shot — which is what these
+   screenshots get read from. Pose it the way ASSAY would report it. */
+const MOOD = {
+  calm: 'content', hover: 'content', drag: 'content', thinking: 'content',
+  watching: 'content', checking: 'content', allowed: 'content',
+  proving: 'content', celebrating: 'happy',
+  suspicious: 'uneasy', error: 'uneasy', asking: 'uneasy',
+  refused: 'stressed', rejecting: 'stressed',
+  sleeping: 'asleep', offline: 'asleep',
+};
+
 /** hover and drag are interaction overlays, not agent states */
 const OVERLAYS = new Set(['hover', 'drag']);
 
@@ -128,6 +140,8 @@ print("  ok  contact sheet -> test/shots/all-states.png")
       if (!overlay) window.__rice.setState(s);
       else window.__rice.setState('calm');
     }, state);
+    await page.evaluate((m) => { document.getElementById('mood').textContent = m; },
+      MOOD[state] || 'content');
     const line = LINES[state];
     if (line) await page.evaluate(([l, sub]) => window.__rice.say(l, sub, 99999), line);
     else await page.evaluate(() => { document.getElementById('bubble').hidden = true; });
