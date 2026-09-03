@@ -53,7 +53,7 @@ function relToWorkdir(p, workdir) {
         path.win32.isAbsolute(relNative),
     };
   }
-
+}
 
 class Protocol {
   constructor(spec, workdir) {
