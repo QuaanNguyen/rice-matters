@@ -1,0 +1,46 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  "//": [
+    "Drop this at %USERPROFILE%\\.config\\opencode\\opencode.json (Windows)",
+    "or ~/.config/opencode/opencode.json (Linux/macOS).",
+    "",
+    "The ONLY change from ASU's generated config is baseURL: it points at",
+    "ASSAY on localhost instead of straight at the gateway. ASSAY forwards to",
+    "https://openai.rc.asu.edu/v1 itself. No fork, no plugin, one line.",
+    "",
+    "Put your real key in the env var ASSAY_API_KEY and start ASSAY with it,",
+    "so the key lives in one place instead of in a file you might commit."
+  ],
+
+  "provider": {
+    "asu": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "ASU AIR (via ASSAY)",
+      "options": {
+        "baseURL": "http://127.0.0.1:4141/v1",
+        "apiKey": "{env:ASSAY_API_KEY}"
+      },
+      "models": {
+        "gemma3-31b-it": { "name": "Gemma 3 31B" },
+        "qwen3-30b-thinking": { "name": "Qwen 3 30B (thinking)" },
+        "qwen3-235b-a22b-instruct": { "name": "Qwen 3 235B" }
+      }
+    }
+  },
+
+  "permission": {
+    "read": "allow",
+    "edit": "allow",
+    "bash": "allow",
+    "webfetch": "allow"
+  },
+
+  "//permission": [
+    "Yes, everything is set to allow. That is deliberate and it is the point.",
+    "ASSAY is the control now, and it decides by protocol rather than by asking",
+    "you fifty times a day. Alert fatigue is why 'allow always' gets switched on",
+    "in the first place; a companion that reacts without blocking is the answer",
+    "to that, not another modal."
+  ]
+}
