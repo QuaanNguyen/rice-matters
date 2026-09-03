@@ -435,6 +435,245 @@ t('session start publishes the protocol and a calm run event', () => {
   assert.ok(out.events.every((e) => e.petState === 'calm'));
 });
 
+t('busy and idle use the thinking type without a schema rewrite', () => {
+  const session = createSession({ protocol: SESSION_PROTOCOL, workdir: '/work/project' });
+  const busy = session.handle({ kind: 'busy' });
+  assert.equal(busy.events[0].type, 'thinking');
+  assert.equal(busy.events[0].status, 'ok');
+  assert.equal(busy.events[0].petState, 'thinking');
+  const idle = session.handle({ kind: 'idle' });
+  assert.equal(idle.events[0].type, 'thinking');
+  assert.equal(idle.events[0].status, 'idle');
+  assert.equal(idle.events[0].petState, 'calm');
+});
+
+t('permission sequence shares an actionId across watching checking and verdict', () => {
+  const session = createSession({ protocol: SESSION_PROTOCOL, workdir: '/work/project' });
+  const out = session.handle({ kind: 'permission', action: 'read', resources: ['../otherlab/notes.md'] });
+  const ids = out.events.map((e) => e.detail && e.detail.actionId);
+  assert.ok(ids.every((id) => typeof id === 'string' && id.length));
+  assert.equal(new Set(ids).size, 1);
+});
+
+console.log('\nowner lifecycle');
+
+const { parseOwnerPid, isProcessAlive, createOwnerRegistry } = require(path.join(ROOT, 'pet/lib/owners'));
+
+t('owner PID must be a positive integer', () => {
+  assert.equal(parseOwnerPid(undefined), null);
+  assert.equal(parseOwnerPid(''), null);
+  assert.equal(parseOwnerPid('0'), null);
+  assert.equal(parseOwnerPid('-3'), null);
+  assert.equal(parseOwnerPid('1.5'), null);
+  assert.equal(parseOwnerPid('abc'), null);
+  assert.equal(parseOwnerPid('42'), 42);
+  assert.equal(parseOwnerPid(7), 7);
+});
+
+t('ESRCH means dead and EPERM means alive', () => {
+  assert.equal(isProcessAlive(1, () => {}), true);
+  assert.equal(isProcessAlive(1, () => { const e = new Error('gone'); e.code = 'ESRCH'; throw e; }), false);
+  assert.equal(isProcessAlive(1, () => { const e = new Error('denied'); e.code = 'EPERM'; throw e; }), true);
+});
+
+t('unmanaged registry does not poll until an owner appears', () => {
+  let intervals = 0;
+  const reg = createOwnerRegistry({
+    setInterval: () => { intervals++; return 1; },
+    clearInterval: () => {},
+    killFn: () => {},
+    onBecameEmpty: () => {},
+  });
+  assert.equal(reg.size(), 0);
+  assert.equal(reg.hasOwned(), false);
+  assert.equal(intervals, 0);
+  assert.equal(reg.add('99'), true);
+  assert.equal(reg.hasOwned(), true);
+  assert.equal(intervals, 1);
+});
+
+t('registry quits only after ownership and every owner is dead', () => {
+  let empty = 0;
+  const alive = new Set([10, 11]);
+  const timers = [];
+  const reg = createOwnerRegistry({
+    pollIntervalMs: 1000,
+    setInterval: (fn) => { timers.push(fn); return timers.length; },
+    clearInterval: () => {},
+    killFn: (pid) => {
+      if (!alive.has(pid)) { const e = new Error('gone'); e.code = 'ESRCH'; throw e; }
+    },
+    onBecameEmpty: () => { empty++; },
+  });
+  reg.add(10);
+  reg.add(11);
+  assert.equal(reg.size(), 2);
+  alive.delete(10);
+  timers[0]();
+  assert.equal(reg.size(), 1);
+  assert.equal(empty, 0);
+  alive.delete(11);
+  timers[0]();
+  assert.equal(reg.size(), 0);
+  assert.equal(empty, 1);
+});
+
+console.log('\nreaction scheduler');
+
+const { createReactionScheduler, MIN_DWELL } = require(path.join(ROOT, 'pet/src/scheduler'));
+
+function fakeClock() {
+  let now = 0;
+  const timers = [];
+  let tid = 0;
+  return {
+    now: () => now,
+    setTimeout(fn, ms) {
+      const id = ++tid;
+      timers.push({ id, at: now + ms, fn });
+      return id;
+    },
+    clearTimeout(id) {
+      const i = timers.findIndex((t) => t.id === id);
+      if (i >= 0) timers.splice(i, 1);
+    },
+    advance(ms) {
+      now += ms;
+      const due = timers.filter((t) => t.at <= now).sort((a, b) => a.at - b.at || a.id - b.id);
+      for (const t of due) {
+        const i = timers.findIndex((x) => x.id === t.id);
+        if (i >= 0) timers.splice(i, 1);
+      }
+      for (const t of due) t.fn();
+    },
+  };
+}
+
+t('event bursts keep watching then checking then refused without reordering', () => {
+  const clock = fakeClock();
+  const shown = [];
+  const sched = createReactionScheduler({
+    now: clock.now,
+    setTimeout: clock.setTimeout,
+    clearTimeout: clock.clearTimeout,
+    onShow: (e) => shown.push(e.petState),
+    onSettle: () => shown.push('SETTLE'),
+  });
+  const id = 'a1';
+  sched.enqueue({ type: 'thinking', petState: 'watching', detail: { actionId: id } });
+  sched.enqueue({ type: 'thinking', petState: 'checking', detail: { actionId: id } });
+  sched.enqueue({ type: 'excursion', petState: 'refused', detail: { actionId: id } });
+  assert.deepEqual(shown, ['watching']);
+  clock.advance(MIN_DWELL.watching);
+  assert.deepEqual(shown, ['watching', 'checking']);
+  clock.advance(MIN_DWELL.checking);
+  assert.deepEqual(shown, ['watching', 'checking', 'refused']);
+  clock.advance(MIN_DWELL.refused - 1);
+  assert.ok(!shown.includes('SETTLE'));
+  assert.equal(shown[shown.length - 1], 'refused');
+});
+
+t('minimum display times are never shortened by a long queue', () => {
+  const clock = fakeClock();
+  const shownAt = [];
+  const sched = createReactionScheduler({
+    now: clock.now,
+    setTimeout: clock.setTimeout,
+    clearTimeout: clock.clearTimeout,
+    onShow: (e) => shownAt.push({ state: e.petState, t: clock.now() }),
+    onSettle: () => {},
+  });
+  for (let i = 0; i < 8; i++) {
+    sched.enqueue({ type: 'action', petState: 'allowed', summary: String(i), detail: { actionId: `x${i}` } });
+  }
+  assert.equal(shownAt[0].state, 'allowed');
+  clock.advance(MIN_DWELL.allowed - 1);
+  assert.equal(shownAt.length, 1);
+  clock.advance(1);
+  assert.equal(shownAt.length, 2);
+  assert.equal(shownAt[1].t - shownAt[0].t, MIN_DWELL.allowed);
+});
+
+t('adjacent low-importance duplicates coalesce; high states are preserved in order', () => {
+  const clock = fakeClock();
+  const shown = [];
+  const sched = createReactionScheduler({
+    now: clock.now,
+    setTimeout: clock.setTimeout,
+    clearTimeout: clock.clearTimeout,
+    onShow: (e) => shown.push(e.summary || e.petState),
+    onSettle: () => {},
+  });
+  sched.enqueue({ type: 'thinking', petState: 'watching', summary: 'w' });
+  sched.enqueue({ type: 'thinking', petState: 'thinking', summary: 't1' });
+  sched.enqueue({ type: 'thinking', petState: 'thinking', summary: 't2' });
+  sched.enqueue({ type: 'excursion', petState: 'refused', summary: 'r1' });
+  sched.enqueue({ type: 'excursion', petState: 'refused', summary: 'r2' });
+  assert.deepEqual(sched.queueSnapshot(), ['thinking', 'refused']);
+  clock.advance(MIN_DWELL.watching);
+  assert.deepEqual(shown, ['w', 't2']);
+  clock.advance(0);
+  assert.deepEqual(shown, ['w', 't2', 'r2']);
+});
+
+t('same actionId duplicates coalesce without discarding a different high state', () => {
+  const clock = fakeClock();
+  const shown = [];
+  const sched = createReactionScheduler({
+    now: clock.now,
+    setTimeout: clock.setTimeout,
+    clearTimeout: clock.clearTimeout,
+    onShow: (e) => shown.push(e.petState + ':' + (e.summary || '')),
+    onSettle: () => {},
+  });
+  sched.enqueue({ petState: 'watching', summary: 'w', detail: { actionId: 'a' } });
+  sched.enqueue({ petState: 'checking', summary: 'c', detail: { actionId: 'a' } });
+  sched.enqueue({ petState: 'allowed', summary: 'old', detail: { actionId: 'a' } });
+  sched.enqueue({ petState: 'allowed', summary: 'new', detail: { actionId: 'a' } });
+  sched.enqueue({ petState: 'refused', summary: 'block', detail: { actionId: 'b' } });
+  clock.advance(MIN_DWELL.watching);
+  clock.advance(MIN_DWELL.checking);
+  clock.advance(MIN_DWELL.allowed);
+  clock.advance(MIN_DWELL.refused);
+  assert.deepEqual(
+    shown.map((s) => s.split(':')[0]),
+    ['watching', 'checking', 'allowed', 'refused'],
+  );
+  assert.ok(shown.some((s) => s === 'allowed:new'));
+  assert.ok(shown.some((s) => s === 'refused:block'));
+});
+
+t('settle target prefers thinking while busy and offline when disconnected', () => {
+  function settleTarget(connected, agentBusy) {
+    if (!connected) return 'offline';
+    if (agentBusy) return 'thinking';
+    return 'calm';
+  }
+  assert.equal(settleTarget(true, true), 'thinking');
+  assert.equal(settleTarget(true, false), 'calm');
+  assert.equal(settleTarget(false, false), 'offline');
+});
+
+t('sleep arms only after true idle, never while busy', () => {
+  let quietArmed = false;
+  let agentBusy = false;
+  function clearQuiet() { quietArmed = false; }
+  function armQuiet() {
+    if (agentBusy) return;
+    quietArmed = true;
+  }
+  function markBusy() { agentBusy = true; clearQuiet(); }
+  function markIdle() { agentBusy = false; armQuiet(); }
+
+  markBusy();
+  armQuiet();
+  assert.equal(quietArmed, false);
+  markIdle();
+  assert.equal(quietArmed, true);
+  markBusy();
+  assert.equal(quietArmed, false);
+});
+
 console.log('\nglobal bind');
 
 t('install materializes a self-contained rice package', () => {

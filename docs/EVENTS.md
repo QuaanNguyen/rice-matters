@@ -38,7 +38,7 @@ Rice shows it in a speech bubble, so keep it under ~60 chars.
 |-------------|---------------------------------------------------------|-----------------------|
 | `run`       | Run started or ended                                    | `start` / `end`       |
 | `protocol`  | Protocol loaded — carries the envelope in `detail`      | `ok`                  |
-| `thinking`  | A request reached ASSAY; the agent is working           | `ok`                  |
+| `thinking`  | A request reached ASSAY; the agent is working           | `ok` / `idle`         |
 | `action`    | A tool call was proposed and allowed                    | `allow`               |
 | `excursion` | A tool call was proposed and refused                    | `block`               |
 | `suspicious`| A tool *result* contained instruction-like text         | `warn`                |
@@ -99,5 +99,10 @@ Rice uses this for idle posture between events, so it feels like it remembers.
 2. ASSAY always sets `petState`, so the pet never has to infer it from `type`.
 3. Rice **never blocks anything**. It reports what already happened.
 4. Silence is the resting state. No event, no reaction — routine allowed
-   actions tick a counter and, apart from a quick nod, say nothing.
+actions tick a counter and, apart from a quick nod, say nothing.
+
+OpenCode busy/idle map onto `thinking` events without a new type:
+`status: "ok"` + `petState: "thinking"` means the agent is busy;
+`status: "idle"` + `petState: "calm"` means true idle (Rice may sleep
+only after 90s of that). `uneasy` is mood only, never an activity state.
 5. `detail` is free-form and may grow; consumers must ignore unknown keys.

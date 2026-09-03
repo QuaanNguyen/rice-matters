@@ -7,7 +7,8 @@
   "scripts": {
     "start": "electron .",
     "start:solid": "electron . --solid",
-    "start:demo": "electron . --demo"
+    "start:demo": "electron . --demo",
+    "start:dev": "electron . --dev"
   },
   "dependencies": {
     "electron": "^32.0.0"

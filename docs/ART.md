@@ -59,6 +59,7 @@ in `calm`, `hover`, `allowed`, `celebrating`) and `.arm` / `.arm-l` / `.arm-r`
 ## Working on it without running anything else
 
     cd pet && npm run start:demo     # replays a canned sequence, no ASSAY needed
+    cd pet && npm run start:dev      # state + overlay pickers; isolated from production Rice
     node test/visual.js              # every state to test/shots/, plus a contact sheet
 
 And in the running app's devtools:

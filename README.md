@@ -86,9 +86,14 @@ Windows:
 
     cd ~/.config/opencode/plugins/rice/pet && npm run start:demo
 
+Animation picker (isolated from production Rice):
+
+    cd ~/.config/opencode/plugins/rice/pet && npm run start:dev
+
 Or from this clone after a local `cd pet && npm install`:
 
     cd pet && npm run start:demo
+    cd pet && npm run start:dev
 
 
 ## The demo

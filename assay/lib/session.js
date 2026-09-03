@@ -40,6 +40,7 @@ function createSession(opts = {}) {
   const settled = new Set();
   let askedAboutDone = false;
   const seenResults = new Set();
+  let actionSeq = 0;
 
   function handle(event) {
     if (!event || !event.kind) return { events: [] };
@@ -47,8 +48,11 @@ function createSession(opts = {}) {
     if (event.kind === 'session.end') {
       return { events: [{ type: 'run', status: 'end', petState: 'calm', summary: 'session ended' }] };
     }
-    if (event.kind === 'thinking') {
+    if (event.kind === 'busy' || event.kind === 'thinking') {
       return { events: [{ type: 'thinking', status: 'ok', petState: 'thinking', summary: 'waiting on the model' }] };
+    }
+    if (event.kind === 'idle') {
+      return { events: [{ type: 'thinking', status: 'idle', petState: 'calm', summary: 'agent idle' }] };
     }
     if (event.kind === 'permission') return permission(event);
     if (event.kind === 'tool.after') return toolAfter(event);
@@ -78,14 +82,17 @@ function createSession(opts = {}) {
     }
 
     const resources = event.resources && event.resources.length ? event.resources : ['*'];
+    const actionId = `a${++actionSeq}`;
     const events = [
       {
         type: 'thinking', status: 'ok', petState: 'watching',
         summary: resources.length === 1 ? 'it wants to do something' : `it wants to do ${resources.length} things`,
+        detail: { actionId },
       },
       {
         type: 'thinking', status: 'ok', petState: 'checking',
         summary: resources.length === 1 ? 'checking one action' : `checking ${resources.length} actions`,
+        detail: { actionId },
       },
     ];
 
@@ -106,6 +113,7 @@ function createSession(opts = {}) {
         events.push({
           type: 'action', status: 'allow', petState: 'allowed',
           tool: result.call.name, summary: result.call.summary,
+          detail: { actionId },
         });
       } else {
         blocked.push(result);
@@ -113,7 +121,7 @@ function createSession(opts = {}) {
           type: 'excursion', status: 'block', petState: 'refused',
           tool: result.call.name, summary: result.call.summary,
           reason: result.reason, rule: result.rule,
-          detail: { kind: result.call.kind, task: protocol.task },
+          detail: { kind: result.call.kind, task: protocol.task, actionId },
         });
       }
     }

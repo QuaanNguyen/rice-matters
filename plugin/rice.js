@@ -127,7 +127,11 @@ function launchPet(inboxPath) {
     );
     return;
   }
-  const env = { ...process.env, RICE_EVENTS: inboxPath };
+  const env = {
+    ...process.env,
+    RICE_EVENTS: inboxPath,
+    RICE_OWNER_PID: String(process.pid),
+  };
   delete env.ELECTRON_RUN_AS_NODE;
   delete env.ELECTRON_SKIP_BINARY_DOWNLOAD;
   const child = spawn(bin, ["."], {
@@ -150,11 +154,24 @@ export const Rice = async ({ client, directory }) => {
   const session = createSession({ protocol, workdir });
   const bus = new EventBus({ inboxPath, runsDir });
   const claimed = new Set();
+  let ended = false;
 
   function publish(out) {
     if (!out || !out.events) return;
     for (const e of out.events) bus.emit(e);
   }
+
+  function endSession() {
+    if (ended) return;
+    ended = true;
+    try {
+      publish(session.handle({ kind: "session.end" }));
+    } catch {
+    }
+  }
+
+  process.on("beforeExit", endSession);
+  process.on("exit", endSession);
 
   publish(session.handle({ kind: "session.start" }));
   launchPet(inboxPath);
@@ -206,9 +223,14 @@ export const Rice = async ({ client, directory }) => {
     event: async ({ event }) => {
       if (!event) return;
       if (event.type === "session.status" && isBusy(event)) {
-        publish(session.handle({ kind: "thinking" }));
+        publish(session.handle({ kind: "busy" }));
       }
-      if (event.type === "session.idle" || event.type === "message.updated" || isIdle(event)) {
+      if (event.type === "session.idle" || isIdle(event)) {
+        publish(session.handle({ kind: "idle" }));
+        await reviewClaims(sessionIDOf(event));
+        return;
+      }
+      if (event.type === "message.updated") {
         await reviewClaims(sessionIDOf(event));
       }
     },

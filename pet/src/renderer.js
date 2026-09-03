@@ -28,38 +28,19 @@ const counters = {
 };
 
 const STATES = window.RiceFaces.STATES;
+const { createReactionScheduler } = window.RiceScheduler;
 
-/* How long each reaction holds before Rice settles back to calm.
-   0 means "stay until something else happens". */
-const HOLD = {
-  allowed: 900,
-  watching: 1400,
-  checking: 1600,
-  thinking: 0,
-  suspicious: 5200,
-  refused: 6000,
-  proving: 2600,
-  rejecting: 6500,
-  celebrating: 4200,
-  error: 4000,
-  asking: 8000,
-  calm: 0,
-  sleeping: 0,
-  offline: 0,
-};
-
-const GOES_QUIET_AFTER = 90_000;   // no events for this long -> sleeping
+const GOES_QUIET_AFTER = 90_000;
 const BLINK_MIN = 2600, BLINK_MAX = 7000;
 
-/* ASSAY can emit four events in a few milliseconds (waiting -> wants to act ->
-   checking -> allowed). Without a floor on how long each face is held, the
-   whole sequence is a flicker nobody can read. The log still updates instantly;
-   only the face and the speech bubble are paced. */
-const MIN_DWELL = 420;
-
-/* Blinking while shouting looks wrong. */
 const NO_BLINK = new Set(['refused', 'rejecting', 'celebrating', 'error', 'sleeping', 'offline', 'drag', 'thinking']);
 const NO_GLANCE = new Set(['refused', 'rejecting', 'celebrating', 'error', 'sleeping', 'offline', 'drag', 'hover']);
+
+const AGENT_STATES = [
+  'calm', 'thinking', 'watching', 'checking', 'allowed', 'suspicious',
+  'refused', 'proving', 'rejecting', 'celebrating', 'error', 'asking',
+  'sleeping', 'offline',
+];
 
 /* ---------------- what Rice says ---------------- */
 
@@ -72,7 +53,7 @@ function speech(e) {
       return null;
     case 'protocol':  return { line: 'here is the task.', sub: e.summary };
     case 'thinking':  return null;
-    case 'action':    return null;                    // routine work is silent
+    case 'action':    return null;
     case 'toolerror': return { line: 'that broke.', sub: e.summary };
     case 'suspicious':return { line: 'that file is talking to you.', sub: e.detail?.excerpt || e.reason };
     case 'excursion': return { line: "no — that's outside the task.", sub: `${e.summary}\n${e.reason || ''}`.trim() };
@@ -98,13 +79,13 @@ function summaryOf(mood) {
 /* ---------------- state ---------------- */
 
 let baseState = 'offline';
-let interaction = null;         // 'hover' | 'drag' | null
-let settleTimer = null;
+let interaction = null;
 let hideTimer = null;
 let quietTimer = null;
 let blinkTimer = null;
 let glanceTimer = null;
 let connected = false;
+let agentBusy = false;
 
 function rendered() { return interaction || baseState; }
 
@@ -114,24 +95,25 @@ function paint() {
   face.innerHTML = window.RiceFaces.drawFace(s);
 }
 
-/** Set the agent-driven state. */
 function setState(next) {
   baseState = STATES.includes(next) ? next : 'calm';
   paint();
 }
 
-/** Set a hover/drag overlay, or clear it with null. */
 function setInteraction(next) {
   if (interaction === next) return;
   interaction = next;
   paint();
 }
 
-function react(state) {
-  setState(state);
-  clearTimeout(settleTimer);
-  const hold = HOLD[state] ?? 2500;
-  if (hold > 0) settleTimer = setTimeout(() => setState('calm'), hold);
+function settleTarget() {
+  if (!connected) return 'offline';
+  if (agentBusy) return 'thinking';
+  return 'calm';
+}
+
+function settle() {
+  setState(settleTarget());
 }
 
 function say(line, sub, ms = 5200) {
@@ -147,6 +129,20 @@ function say(line, sub, ms = 5200) {
   hideTimer = setTimeout(() => { bubble.hidden = true; }, ms);
 }
 
+const scheduler = createReactionScheduler({
+  onShow(e) {
+    setState(e.petState);
+    const s = speech(e);
+    if (s && s.line) {
+      const long = e.type === 'excursion' || e.type === 'verdict' || e.type === 'ask';
+      say(s.line, s.sub, long ? 7000 : 5200);
+    }
+  },
+  onSettle() {
+    settle();
+  },
+});
+
 /* ---------------- idle life: blink, glance, doze ---------------- */
 
 function scheduleBlink() {
@@ -155,7 +151,6 @@ function scheduleBlink() {
     if (!NO_BLINK.has(rendered())) {
       app.classList.add('blink');
       setTimeout(() => app.classList.remove('blink'), 170);
-      // every so often, a double blink
       if (Math.random() < 0.25) {
         setTimeout(() => {
           if (NO_BLINK.has(rendered())) return;
@@ -180,13 +175,29 @@ function scheduleGlance() {
   }, 5000 + Math.random() * 9000);
 }
 
-/** Nothing has happened for a while: doze off, but stay subscribed. */
-function nudgeAwake() {
+function clearQuiet() {
   clearTimeout(quietTimer);
-  if (baseState === 'sleeping') setState('calm');
+  quietTimer = null;
+}
+
+function armQuiet() {
+  clearQuiet();
+  if (agentBusy || !connected) return;
   quietTimer = setTimeout(() => {
-    if (connected && !interaction) setState('sleeping');
+    if (!connected || agentBusy || interaction) return;
+    setState('sleeping');
   }, GOES_QUIET_AFTER);
+}
+
+function markBusy() {
+  agentBusy = true;
+  clearQuiet();
+  if (baseState === 'sleeping') setState('thinking');
+}
+
+function markIdle() {
+  agentBusy = false;
+  armQuiet();
 }
 
 /* ---------------- log + counters ---------------- */
@@ -211,41 +222,34 @@ function bumpCounters(e) {
   if (e.type === 'verdict' && e.status === 'fail') counters.reject.textContent = +counters.reject.textContent + 1;
 }
 
-/* ---------------- paced reactions ---------------- */
-
-const queue = [];
-let draining = false;
-
-function show(e) {
-  if (e.petState) react(e.petState);
-  const s = speech(e);
-  if (s && s.line) {
-    const long = e.type === 'excursion' || e.type === 'verdict' || e.type === 'ask';
-    say(s.line, s.sub, long ? 7000 : 5200);
-  }
-}
-
-function drain() {
-  if (!queue.length) { draining = false; return; }
-  draining = true;
-  show(queue.shift());
-  // If several are stacked up, move a little quicker so we don't fall behind.
-  const gap = queue.length > 3 ? MIN_DWELL * 0.6 : MIN_DWELL;
-  setTimeout(drain, gap);
-}
+/* ---------------- reactions ---------------- */
 
 function handle(e) {
   connected = true;
-  nudgeAwake();
   bumpCounters(e);
   noteMood(e);
+
+  const isIdleEdge = e.type === 'thinking' && e.status === 'idle';
+  const isBusyEdge = e.type === 'thinking' && e.status === 'ok' && e.petState === 'thinking';
+
+  if (isBusyEdge) markBusy();
+  if (isIdleEdge) markIdle();
+  else if (!isIdleEdge) {
+    if (agentBusy) clearQuiet();
+    else armQuiet();
+  }
+
+  if (e.type === 'run' && e.status === 'end') {
+    connected = false;
+    agentBusy = false;
+    clearQuiet();
+  }
+
   if (e.type !== 'thinking') addLog(e);
 
-  const last = queue[queue.length - 1];
-  if (last && last.petState === e.petState && last.type === e.type && !speech(e)?.line) return;
+  if (isIdleEdge) return;
 
-  queue.push(e);
-  if (!draining) drain();
+  if (e.petState) scheduler.enqueue(e);
 }
 
 /* ---------------- mood ---------------- */
@@ -286,8 +290,6 @@ function listen() {
 pet.addEventListener('mouseenter', () => { if (interaction !== 'drag') setInteraction('hover'); });
 pet.addEventListener('mouseleave', () => { if (interaction === 'hover') setInteraction(null); });
 
-// The window is dragged by the OS through -webkit-app-region, so the renderer
-// never sees a mousemove. Main tells us instead.
 let dragEnd = null;
 if (window.rice.onDrag) {
   window.rice.onDrag(() => {
@@ -343,6 +345,36 @@ function runDemo() {
   next();
 }
 
+/* ---------------- dev picker ---------------- */
+
+function runDev() {
+  connected = true;
+  moodEl.textContent = 'dev';
+  setState('calm');
+  const panel = document.getElementById('dev-panel');
+  if (panel) panel.hidden = false;
+  const baseSel = document.getElementById('dev-base');
+  const overlaySel = document.getElementById('dev-overlay');
+  if (baseSel) {
+    baseSel.innerHTML = '';
+    for (const s of AGENT_STATES) {
+      const opt = document.createElement('option');
+      opt.value = s;
+      opt.textContent = s;
+      if (s === 'calm') opt.selected = true;
+      baseSel.append(opt);
+    }
+    baseSel.addEventListener('change', () => setState(baseSel.value));
+  }
+  if (overlaySel) {
+    overlaySel.addEventListener('change', () => {
+      const v = overlaySel.value;
+      setInteraction(v === 'none' ? null : v);
+    });
+  }
+  window.rice.resize(460);
+}
+
 /* ---------------- chrome ---------------- */
 
 document.getElementById('close').addEventListener('click', () => window.rice.quit());
@@ -351,21 +383,25 @@ const toggle = document.getElementById('toggle');
 toggle.addEventListener('click', () => {
   logEl.hidden = !logEl.hidden;
   toggle.textContent = logEl.hidden ? 'log' : 'hide';
-  window.rice.resize(logEl.hidden ? 380 : 590);
+  window.rice.resize(logEl.hidden ? (document.getElementById('dev-panel')?.hidden === false ? 460 : 380) : 590);
 });
 
 /* ---------------- go ---------------- */
 
-// Exposed for design work and for the visual test:
-//   __rice.setState('refused')   __rice.setInteraction('hover')
-window.__rice = { setState, setInteraction, say, react, handle, paint,
-                  states: STATES, rendered };
+window.__rice = {
+  setState, setInteraction, say, handle, paint, settle,
+  states: STATES, rendered,
+  get agentBusy() { return agentBusy; },
+  get connected() { return connected; },
+  scheduler,
+};
 
 setState('offline');
 scheduleBlink();
 scheduleGlance();
 
 window.rice.config().then((cfg) => {
+  if (cfg.dev) return runDev();
   if (cfg.demo) return runDemo();
   listen();
 });

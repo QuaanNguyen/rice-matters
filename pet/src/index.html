@@ -141,6 +141,21 @@
       </svg>
     </div>
 
+    <div id="dev-panel" class="dev-panel" hidden>
+      <label class="dev-field">
+        <span>base</span>
+        <select id="dev-base"></select>
+      </label>
+      <label class="dev-field">
+        <span>overlay</span>
+        <select id="dev-overlay">
+          <option value="none" selected>none</option>
+          <option value="hover">hover</option>
+          <option value="drag">drag</option>
+        </select>
+      </label>
+    </div>
+
     <div class="tray">
       <span id="mood" class="mood">asleep</span>
       <span class="counts">
@@ -157,6 +172,7 @@
   </div>
 
   <script src="rice.js"></script>
+  <script src="scheduler.js"></script>
   <script src="renderer.js"></script>
 </body>
 </html>
