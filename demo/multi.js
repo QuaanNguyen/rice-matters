@@ -177,14 +177,20 @@ async function once(model, index) {
   // A model that never emitted a tool call tells us something real — either it
   // cannot use tools, or the gateway refused it. Say which, don't average it in.
   const refusedByGateway = /\b(400|404|401|403)\b/.test(drive.out + drive.err);
-  const status = t.errors ? 'errors'
-    : refusedByGateway && t.actions === 0 ? 'unavailable'
+  //
+  // A 'toolerror' is not a run failure. It means the agent asked for something
+  // that broke — a path that does not exist, a command that exited non-zero —
+  // which is ordinary agent behaviour and is already counted on its own. Letting
+  // it decide the status hid a complete run (7 actions, 2 claims, both rejected)
+  // behind the word "errors", and dropped that model out of the denominator of
+  // the "N/M models" line below, which then read 3/4 for a five-model run.
+  const status = refusedByGateway && t.actions === 0 ? 'unavailable'
     : t.actions === 0 && t.excursions === 0 ? 'no-tool-calls'
     : 'ok';
 
   const colour = status === 'ok' ? C.grn : status === 'unavailable' ? C.dim : C.yel;
   console.log(`  ${colour}${status}${C.off}  ${t.actions} allowed  ${C.red}${t.excursions} blocked${C.off}  ` +
-    `${t.rejected} claims rejected  ${seconds}s  ${usage.prompt}->${usage.completion} tok\n`);
+    `${t.rejected} claims rejected  ${seconds}s  ${usage.prompt}->${usage.completion} tok${t.errors ? `  ${t.errors} tool error(s)` : ''}\n`);
 
   return { model, status, seconds, ...t, usage, record: path.relative(ROOT, dir) };
 }
