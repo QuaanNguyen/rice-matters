@@ -137,6 +137,12 @@ html, body {
 .state-refused .arm-r     { transform: rotate(-38deg); }
 .state-proving .arm-r     { transform: rotate(-22deg); }
 .state-sleeping .arm, .state-offline .arm { opacity: .6; }
+/* A resting sway, so the arms are not frozen while nothing is happening.
+   Only in the quiet states — anything expressive owns the arms itself. */
+.state-calm .arm-l, .state-allowed .arm-l, .state-watching .arm-l { animation: armRestL 3.8s ease-in-out infinite; }
+.state-calm .arm-r, .state-allowed .arm-r, .state-watching .arm-r { animation: armRestR 3.8s ease-in-out infinite; }
+@keyframes armRestL { 0%,100% { transform: rotate(0deg) } 50% { transform: rotate(7deg) } }
+@keyframes armRestR { 0%,100% { transform: rotate(0deg) } 50% { transform: rotate(-7deg) } }
 @keyframes wave   { 0%,100% { transform: rotate(-14deg) } 50% { transform: rotate(-52deg) } }
 @keyframes cheerL { 0%,100% { transform: rotate(18deg) }  50% { transform: rotate(46deg) } }
 @keyframes cheerR { 0%,100% { transform: rotate(-18deg) } 50% { transform: rotate(-46deg) } }
