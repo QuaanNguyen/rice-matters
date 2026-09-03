@@ -142,6 +142,7 @@ threat model the literature names.
     demo/           the fabricated poisoned repo, and a 120-line agent harness
     test/           41 tests: run-tests.js, plus visual.js for the pet's faces
     docs/EVENTS.md  the schema. the only contract between the two halves.
+    docs/ART.md     how to swap Rice's art without breaking the behaviour
 
 ## Tests
 
