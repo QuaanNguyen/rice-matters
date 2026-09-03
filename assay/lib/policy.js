@@ -13,6 +13,15 @@ function globToRe(glob) {
   let re = '';
   for (let i = 0; i < glob.length; i++) {
     const c = glob[i];
+    // 'dir/**' matches 'dir' itself, not just what is under it. Listing the
+    // directory a task names is inside that task: with a bare 'dir/.*',
+    // 'data/**' allowed 'data/survey.csv' but refused 'ls ./data', so an agent
+    // could only read files whose names it already knew.
+    if (c === '/' && glob[i + 1] === '*' && glob[i + 2] === '*') {
+      const after = glob[i + 3];
+      if (after === undefined) { re += '(?:/.*)?'; i += 2; continue; }
+      if (after === '/') { re += '(?:/.*)?/'; i += 3; continue; }
+    }
     if (c === '*') {
       if (glob[i + 1] === '*') { re += '.*'; i++; if (glob[i + 1] === '/') i++; }
       else re += '[^/]*';
