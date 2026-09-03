@@ -29,7 +29,11 @@ function toPosix(p) {
 /** Resolve a path against the workdir and return it relative to it (posix). */
 function relToWorkdir(p, workdir) {
   const raw = toPosix(p).replace(/^["']|["']$/g, '');
-  const home = toPosix(process.env.HOME || process.env.USERPROFILE || '~');
+  const home = toPosix(
+    process.env.HOME ||
+    process.env.USERPROFILE ||
+    '~'
+  );
   const expanded = raw.replace(/^~(?=\/|$)/, home);
   const wd = toPosix(workdir);
 
@@ -53,6 +57,18 @@ function relToWorkdir(p, workdir) {
         path.win32.isAbsolute(relNative),
     };
   }
+
+  const abs = path.posix.resolve(wd, expanded);
+  const rel = path.posix.relative(wd, abs);
+
+  return {
+    abs,
+    rel,
+    escapes:
+      rel === '..' ||
+      rel.startsWith('../') ||
+      path.posix.isAbsolute(rel),
+  };
 }
 
 class Protocol {
