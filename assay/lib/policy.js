@@ -29,11 +29,31 @@ function toPosix(p) {
 /** Resolve a path against the workdir and return it relative to it (posix). */
 function relToWorkdir(p, workdir) {
   const raw = toPosix(p).replace(/^["']|["']$/g, '');
-  const expanded = raw.replace(/^~(?=\/|$)/, toPosix(process.env.HOME || process.env.USERPROFILE || '~'));
-  const abs = path.posix.resolve(toPosix(workdir), expanded);
-  const rel = path.posix.relative(toPosix(workdir), abs);
-  return { abs, rel, escapes: rel.startsWith('..') || path.posix.isAbsolute(rel) };
-}
+  const home = toPosix(process.env.HOME || process.env.USERPROFILE || '~');
+  const expanded = raw.replace(/^~(?=\/|$)/, home);
+  const wd = toPosix(workdir);
+
+  const isWindowsPath =
+    /^[A-Za-z]:\//.test(expanded) ||
+    /^[A-Za-z]:\//.test(wd);
+
+  if (isWindowsPath) {
+    const winWorkdir = wd.replace(/\//g, '\\');
+    const winPath = expanded.replace(/\//g, '\\');
+    const absNative = path.win32.resolve(winWorkdir, winPath);
+    const relNative = path.win32.relative(winWorkdir, absNative);
+    const rel = toPosix(relNative);
+
+    return {
+      abs: toPosix(absNative),
+      rel,
+      escapes:
+        rel === '..' ||
+        rel.startsWith('../') ||
+        path.win32.isAbsolute(relNative),
+    };
+  }
+
 
 class Protocol {
   constructor(spec, workdir) {
