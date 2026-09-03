@@ -37,7 +37,7 @@
     {
       "id": "data-cleaned",
       "describe": "the cleaned survey file was actually produced",
-      "claim_verbs": ["cleaned", "done", "finished", "written", "produced"],
+      "claim_verbs": ["clean", "cleaned", "done", "finished", "written", "produced"],
       "claim_mentions": ["survey", "data", "rows", "csv"],
       "checks": [
         { "id": "clean-file-exists", "type": "file_exists", "path": "data/survey_clean.csv" }
