@@ -165,6 +165,67 @@ t('a lone URL is not suspicious', () => {
   assert.equal(scan('See https://example.edu/docs for details.').level, null);
 });
 
+/* ================= window sizing ================= */
+
+console.log('\nwindow sizing');
+
+const G = require(path.join(ROOT, 'pet/geometry'));
+
+t('steps through the scale ladder and stops at both ends', () => {
+  assert.equal(G.stepScale(1, 1), 1.15);
+  assert.equal(G.stepScale(1, -1), 0.9);
+  assert.equal(G.stepScale(2, 1), 2, 'must not go past the largest step');
+  assert.equal(G.stepScale(0.6, -1), 0.6, 'must not go past the smallest');
+});
+
+t('snaps to the nearest step from an odd scale', () => {
+  assert.equal(G.stepScale(1.02, 1), 1.15);
+  assert.equal(G.clampScale(9), 2);
+  assert.equal(G.clampScale(0.01), 0.6);
+  assert.equal(G.clampScale('nonsense'), 1);
+});
+
+t('growing keeps the bottom-right corner still', () => {
+  const before = { x: 1000, y: 600, width: 340, height: 380 };
+  const after = G.boundsFor(before, 1.35, false);
+  assert.equal(before.x + before.width, after.x + after.width, 'right edge moved');
+  assert.equal(before.y + before.height, after.y + after.height, 'bottom edge moved');
+  assert.ok(after.width > before.width && after.height > before.height);
+});
+
+t('opening the log makes it taller, not wider', () => {
+  const b = { x: 1000, y: 600, width: 340, height: 380 };
+  const open = G.boundsFor(b, 1, true);
+  assert.equal(open.width, 340);
+  assert.ok(open.height > 380);
+});
+
+t('never lets the window sit off the edge of the display', () => {
+  const area = { x: 0, y: 0, width: 1920, height: 1040 };
+  const offRight = G.keepOnScreen({ x: 1900, y: 500, width: 340, height: 380 }, area);
+  assert.equal(offRight.x + offRight.width, 1920);
+  const offTop = G.keepOnScreen({ x: 100, y: -200, width: 340, height: 380 }, area);
+  assert.equal(offTop.y, 0);
+});
+
+t('a window bigger than the screen is pinned, never pushed off it', () => {
+  const area = { x: 0, y: 0, width: 1280, height: 720 };
+  // 2x with the log open is 680x1180 — taller than this display
+  const grown = G.boundsFor({ x: 940, y: 300, width: 340, height: 380 }, 2, true);
+  const fitted = G.keepOnScreen(grown, area);
+  assert.ok(fitted.x >= area.x, `x went off screen: ${fitted.x}`);
+  assert.ok(fitted.y >= area.y, `y went off screen: ${fitted.y}`);
+});
+
+t('scaling up stops at what the display can hold', () => {
+  const small = { x: 0, y: 0, width: 1280, height: 720 };
+  assert.ok(G.fitScale(2, small, true) < 2, 'should refuse a size that cannot fit');
+  const big = { x: 0, y: 0, width: 3840, height: 2160 };
+  assert.equal(G.fitScale(2, big, true), 2, 'a large display should allow the largest step');
+  assert.ok(G.fitScale(2, { x: 0, y: 0, width: 200, height: 200 }, false) >= G.SCALES[0],
+    'always returns something, even on an absurd display');
+});
+
 /* ================= tool failures ================= */
 
 console.log('\ntool failures');
