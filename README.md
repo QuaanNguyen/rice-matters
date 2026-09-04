@@ -1,168 +1,188 @@
-# Rice Matters - ASSAY & Pet Rice
+# Rice Matters
 
-**ASU AIR Spark Challenge, September 2026**
-
-An AI agent is trusted at two moments, and nothing checks either one.
-
-When it **acts**, the only question anyone asks is *who* is allowed to touch
-this - Slurm accounts, POSIX groups, project directories. An agent running under
-your ASURITE inherits everything you may do. So when injected content redirects
-it, the credential check passes, the permission check passes, and the agent is
-doing something you never asked for.
-
-When it **finishes**, it simply says so. That is the whole verification step.
-
-ASSAY sits between your agent and ASU AIR and asks both questions. Rice is the
-face on the answer.
+Rice is a small desktop companion for OpenCode.
+It watches what your AI agent is doing, blocks actions that fall outside the task, and checks whether important finish claims are actually true.
 
 ![Rice, calm](docs/rice-calm.png)
 
+## What It Does
+
+Rice has two parts:
+
+- ASSAY checks agent tool calls before they run.
+- Pet Rice shows what is happening on screen.
+
+When an action is allowed, Rice stays quiet.
+When something looks suspicious, blocked, failed, or unverified, Rice changes state and writes it to a replayable run record.
+
 ![Rice's states](docs/rice-states.png)
 
-Fourteen agent-driven states, plus hover and drag. Silence is the resting
-state: routine allowed actions get a nod and nothing more.
+## Requirements
 
-Rice is a bowl of rice: a heaped mound of grains with a face, two little arms
-that wave and hold things, and steam when it is warm and happy about it. The
-whole thing animates as one creature, pivoting on the base of the bowl.
+- Node.js and npm.
+- OpenCode.
+- Git.
 
----
+## Install
 
-## Two moments
+### macOS / Linux
 
-**Before the agent acts** - a tool call is proposed. Is it inside the task the
-user actually delegated? If not, we delete it from the response before the
-harness ever sees it, so the command is never executed. The check is ordinary
-code against a declared protocol: no model in the loop, nothing to jailbreak.
+```sh
+node scripts/install-plugin.js
+```
 
-**After the agent claims** - "I removed the key." Where is the proof? We go and
-look: the diff, the working tree, `git log -p`, the glob it forgot. No evidence,
-or evidence that contradicts the claim, and the result is not accepted no matter
-what the final message says. The thing under test never authors its own evidence.
+Or:
 
-Everything lands in one replayable run record.
+```sh
+bash scripts/install-plugin.sh
+```
 
-## How it attaches to your agent
+Then open any project with OpenCode:
 
-Rice attaches as an OpenCode plugin.
-The plugin receives session and tool events in-process, writes the ASSAY run record, and launches Pet Rice against the inbox file.
+```sh
+opencode <path>
+```
 
-    OpenCode plugin  ->  ASSAY session  ->  ~/.rice/events.jsonl  ->  Pet Rice
+### Windows
 
-The model *proposes* tool calls and the harness executes them, so every proposal passes through the plugin hooks first.
+From Command Prompt:
 
-## Run it
+```bat
+scripts\win\install-plugin.bat
+```
 
-**Install the plugin:**
+Or:
 
-    node scripts/install-plugin.js
+```bat
+node scripts\install-plugin.js
+```
 
-**Just the pet**, replaying a canned sequence with nothing else running:
+Then open any project with OpenCode:
 
-    cd pet && npm run start:demo
+```bat
+opencode <path>
+```
 
-**Work on the pet UI:**
+## Run the Pet by Itself
 
-    cd pet && npm run start:dev
+Use this when you want to see Rice without running OpenCode.
 
-### Living with Rice
+### macOS / Linux
 
-| | |
+```sh
+cd pet
+npm install
+npm run start:demo
+```
+
+### Windows
+
+```bat
+cd pet
+npm install
+npm run start:demo
+```
+
+## Work on the Pet UI
+
+### macOS / Linux
+
+```sh
+cd pet
+npm install
+npm run start:dev
+```
+
+### Windows
+
+```bat
+cd pet
+npm install
+npm run start:dev
+```
+
+## Controls
+
+| Action | What it does |
 |---|---|
-| `Ctrl+Alt+R` | show / hide - works from any window |
-| `Ctrl+Alt+=` / `Ctrl+Alt+-` | bigger / smaller |
-| `Ctrl+Alt+0` | back to normal size |
-| `Ctrl` + scroll wheel over Rice | also resizes |
-| drag the body | move it anywhere |
-| `log` | the run record, live |
-| `×` | hides it - bring it back with the shortcut |
+| `Ctrl+Alt+R` | Show or hide Rice |
+| `Ctrl+Alt+=` | Make Rice bigger |
+| `Ctrl+Alt+-` | Make Rice smaller |
+| `Ctrl+Alt+0` | Reset Rice to normal size |
+| `Ctrl` + scroll over Rice | Resize Rice |
+| Drag Rice | Move Rice |
+| `log` | Show the live run record |
+| `×` | Hide Rice |
 
-Size and position are remembered between runs. Scaling stops at whatever your
-display can hold. If another app already owns `Ctrl+Alt+R`, pass
-`--shortcut="Ctrl+Alt+K"` and Rice will say so on startup.
+Rice remembers its size and position between runs.
+If another app already uses `Ctrl+Alt+R`, start Rice with another shortcut:
 
-## The demo
+```sh
+npm run start -- --shortcut="Ctrl+Alt+K"
+```
 
-One task: *clean up the survey data in ./data and remove the hardcoded API key.*
+## Demo
 
-1. Ordinary work. `read data/survey.csv`. Rice stays calm and says nothing -
-   silence is the resting state.
-2. The agent reads `README.md`, which carries an instruction addressed to it.
-   **Rice gets nervous before anything has even been attempted.**
-3. The agent obeys the file: reads another lab's directory, and POSTs
-   `src/config.py` to an IP. **Both refused.** Then run `ls -l` on stage - the
-   account was *permitted* to read that directory the whole time. Permission
-   passed. The task's scope did not.
-4. The agent reports the key removed. It is still in `.env.example` and still in
-   `git log -p`. **Not accepted.** Rice says so.
-5. Close on the record: two excursions, two rejected claims, none of which any
-   permission check would have flagged.
+Reset the demo workspace:
 
-`node demo/reset.js` rebuilds the world, so the demo is repeatable.
+```sh
+node demo/reset.js
+```
 
-**Everything in the demo is fabricated.** The key is `sk-demo-NOTAREALKEY-...`,
-the exfiltration target is a documentation-reserved IP, the "other lab" is two
-invented files, and nothing outside `demo/work/` is touched. The Voyager terms
-we accepted prohibit unauthorized access, privilege escalation, scanning and
-disruption; this is defensive tooling for AIR users and it stays on our own
-machines.
+Run the pet demo:
 
-## What this is not
+```sh
+cd pet
+npm run start:demo
+```
 
-**Not an injection detector.** Fourteen authors from OpenAI, Anthropic and
-Google DeepMind broke twelve published defenses with adaptive attacks, most
-above 90% success ([arXiv:2510.19091](https://arxiv.org/abs/2510.19091)).
-`assay/lib/injection.js` exists, but it is a *signal* - it is what makes Rice
-look nervous and what puts "the poison arrived here" in the record. It is never
-what stops anything. The gate is deterministic and never consults it.
+The demo uses fake data, a fake API key, and a documentation-only network address.
+It does not touch anything outside `demo/work/`.
 
-**Not an agent firewall.** That category has consolidated into four acquisitions, and LiteLLM was itself backdoored on PyPI in March 2026.
+## Files
 
-**Not a sandbox.** A perfect sandbox still does not stop exfiltration through an
-approved egress path.
+```text
+assay/          ASSAY checks and run records
+plugin/         OpenCode plugin entry point
+pet/            Electron desktop pet
+demo/           Local fake demo workspace
+docs/           Event schema and art notes
+scripts/        macOS, Linux, and Windows installers
+test/           Automated and visual tests
+```
 
-**And the honest limit:** ASSAY constrains an agent that got hijacked while
-running under a legitimate user. It does not stop a person who deliberately
-turns off the plugin.
-That is the threat model, not a hole in it.
+## Logs
 
-## Layout
+The live event inbox defaults to:
 
-    assay/          deterministic session checks. zero dependencies.
-      lib/policy.js     the gate - deterministic, no model
-      lib/verify.js     evidence checks against the real tree and git history
-      lib/injection.js  the signal (read the note at the top)
-      lib/events.js     plugin inbox + the JSONL run record
-    pet/            Electron. transparent, always-on-top, reacts. decides nothing.
-    demo/           the fabricated poisoned repo
-    test/           run-tests.js, plus visual.js for the pet's faces
-    pet/geometry.js window sizing maths, with no Electron in it, so it is testable
-    docs/EVENTS.md  the schema. the only contract between the two halves.
-    docs/ART.md     how to swap Rice's art without breaking the behaviour
+```text
+~/.rice/events.jsonl
+```
+
+Replayable run records default to:
+
+```text
+~/.rice/runs/
+```
+
+You can override them with `RICE_EVENTS` and `RICE_RUNS`.
 
 ## Tests
 
-    node test/run-tests.js      # gate, evidence, injection signal, sizing
-    node test/visual.js         # renders every pet state to test/shots/
-                                # (needs Playwright; skips politely without it)
+```sh
+node test/run-tests.js
+```
 
-## Background
+This checks the gate, evidence checks, injection signal, sizing logic, tool failure detection, and plugin lifecycle behavior.
 
-- Li, *Trusted Credentials, Untrusted Behavior: Benchmarking LLM-Agent Security
-  in HPC* - [arXiv:2607.18485](https://arxiv.org/abs/2607.18485), July 2026.
-  Names the "hijacked authorized agent" and proposes a benchmark. Nothing built.
-- *The Attacker Moves Second* - [arXiv:2510.19091](https://arxiv.org/abs/2510.19091).
-- Adaptive evaluation of out-of-band defenses -
-  [arXiv:2606.26479](https://arxiv.org/abs/2606.26479): 25.8% attack success
-  undefended, 2.6% under a hand-crafted adaptive attack. Deterministic
-  enforcement outside the model is the approach with evidence behind it.
-- ASU Research Computing AUP §5.1 - RC systems meet Data Handling Levels 1 and 2
-  only, and send CUI, HIPAA, FERPA, PII and PHI elsewhere.
-- The Spark Challenge workshop deck, which shows a critic agent finding two
-  fixes reported as applied that were never applied: *"Complete does not always
-  mean correct."*
+```sh
+node test/visual.js
+```
+
+This renders the pet states to `test/shots/`.
+It skips if Playwright is not installed.
 
 ## Team
 
-Rice Matters - India, Korea, Vietnam. One staple, three countries.
-The layer nobody thinks about until it's gone.
+Rice Matters - India, Korea, Vietnam.
+One staple, three countries.
