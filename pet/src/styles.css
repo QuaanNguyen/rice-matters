@@ -2,35 +2,48 @@
   --ink: #f2f6f3;
   --muted: #9fb0a8;
   --panel: rgba(14, 20, 18, 0.86);
-  --panel-edge: rgba(255, 255, 255, 0.10);
+  --panel-edge: rgba(255, 255, 255, 0.1);
 
-  --calm:        #4cc0a5;
-  --hover:       #6fd3b8;
-  --drag:        #8fd0e6;
-  --thinking:    #5aa9e6;
-  --watching:    #58c8d6;
-  --checking:    #e0b341;
-  --allowed:     #58d68d;
-  --suspicious:  #e08a3c;
-  --refused:     #e2604a;
-  --proving:     #c9a227;
-  --rejecting:   #d1487f;
+  --calm: #4cc0a5;
+  --hover: #6fd3b8;
+  --drag: #8fd0e6;
+  --thinking: #5aa9e6;
+  --watching: #58c8d6;
+  --checking: #e0b341;
+  --allowed: #58d68d;
+  --suspicious: #e08a3c;
+  --refused: #e2604a;
+  --proving: #c9a227;
+  --rejecting: #d1487f;
   --celebrating: #58d68d;
-  --error:       #ef7a5a;
-  --sleeping:    #7d8f96;
-  --asking:      #5aa9e6;
-  --offline:     #6b7a74;
+  --error: #ef7a5a;
+  --sleeping: #7d8f96;
+  --asking: #5aa9e6;
+  --offline: #6b7a74;
 
   --accent: var(--offline);
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-html, body {
-  width: 100%; height: 100%;
+html,
+body {
+  width: 100%;
+  height: 100%;
   background: transparent;
   overflow: hidden;
-  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+  font-family:
+    "Segoe UI",
+    -apple-system,
+    BlinkMacSystemFont,
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
   -webkit-user-select: none;
   user-select: none;
   cursor: default;
@@ -38,7 +51,8 @@ html, body {
 
 #app {
   position: relative;
-  width: 100%; height: 100%;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -63,11 +77,16 @@ html, body {
   line-height: 1.35;
   backdrop-filter: blur(8px);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.42);
-  animation: pop 220ms cubic-bezier(.2,1.3,.5,1) both;
+  animation: pop 220ms cubic-bezier(0.2, 1.3, 0.5, 1) both;
   margin-bottom: 2px;
 }
-.bubble[hidden] { display: none; }
-.bubble-line { font-weight: 600; letter-spacing: 0.1px; }
+.bubble[hidden] {
+  display: none;
+}
+.bubble-line {
+  font-weight: 600;
+  letter-spacing: 0.1px;
+}
 .bubble-sub {
   margin-top: 3px;
   color: var(--muted);
@@ -77,11 +96,15 @@ html, body {
   word-break: break-word;
   white-space: pre-line;
 }
-.bubble-sub[hidden] { display: none; }
+.bubble-sub[hidden] {
+  display: none;
+}
 .bubble-tail {
   position: absolute;
-  left: 26px; bottom: -6px;
-  width: 11px; height: 11px;
+  left: 26px;
+  bottom: -6px;
+  width: 11px;
+  height: 11px;
   background: var(--panel);
   border-right: 1px solid var(--panel-edge);
   border-bottom: 1px solid var(--panel-edge);
@@ -89,15 +112,22 @@ html, body {
 }
 
 @keyframes pop {
-  from { opacity: 0; transform: translateY(6px) scale(.96); }
-  to   { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* ---------------- the pet ---------------- */
 
 .pet {
   position: relative;
-  width: 150px; height: 225px;
+  width: 150px;
+  height: 225px;
   display: grid;
   place-items: center;
 }
@@ -112,44 +142,128 @@ html, body {
    which is what makes the grain look like it is sitting *in* something. */
 .grain {
   transform-box: fill-box;
-  transform-origin: 50% 94%;   /* the base of the bowl: it pivots on the table */
+  transform-origin: 50% 94%; /* the base of the bowl: it pivots on the table */
 }
 
 /* Steam only when it is warm and happy about it. */
-.steam { opacity: 0; transition: opacity 400ms ease; }
+.steam {
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
 .state-calm .steam,
 .state-celebrating .steam,
 .state-hover .steam,
-.state-allowed .steam { opacity: 1; animation: rise 3.4s ease-in-out infinite; }
+.state-allowed .steam {
+  opacity: 1;
+  animation: rise 3.4s ease-in-out infinite;
+}
 @keyframes rise {
-  0%   { opacity: 0;   transform: translateY(4px)  scaleY(.9) }
-  35%  { opacity: .85; }
-  100% { opacity: 0;   transform: translateY(-12px) scaleY(1.15) }
+  0% {
+    opacity: 0;
+    transform: translateY(4px) scaleY(0.9);
+  }
+  35% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-12px) scaleY(1.15);
+  }
 }
 
 /* Arms. Mostly tucked in; they come out to wave and to hold things. */
-.arm { transform-box: fill-box; transform-origin: top center; opacity: .95; }
-.arm-l { transform-origin: 100% 0; }
-.arm-r { transform-origin: 0 0; }
-.state-hover .arm-r      { animation: wave 520ms ease-in-out infinite; }
-.state-celebrating .arm-l { animation: cheerL 620ms ease-in-out infinite; }
-.state-celebrating .arm-r { animation: cheerR 620ms ease-in-out infinite; }
-.state-refused .arm-r     { transform: rotate(-38deg); }
-.state-proving .arm-r     { transform: rotate(-22deg); }
-.state-sleeping .arm, .state-offline .arm { opacity: .6; }
+.arm {
+  transform-box: fill-box;
+  transform-origin: top center;
+  opacity: 0.95;
+}
+.arm-l {
+  transform-origin: 100% 0;
+}
+.arm-r {
+  transform-origin: 0 0;
+}
+.state-hover .arm-r {
+  animation: wave 520ms ease-in-out infinite;
+}
+.state-celebrating .arm-l {
+  animation: cheerL 620ms ease-in-out infinite;
+}
+.state-celebrating .arm-r {
+  animation: cheerR 620ms ease-in-out infinite;
+}
+.state-refused .arm-r {
+  transform: rotate(-38deg);
+}
+.state-proving .arm-r {
+  transform: rotate(-22deg);
+}
+.state-sleeping .arm,
+.state-offline .arm {
+  opacity: 0.6;
+}
 /* A resting sway, so the arms are not frozen while nothing is happening.
    Only in the quiet states — anything expressive owns the arms itself. */
-.state-calm .arm-l, .state-allowed .arm-l, .state-watching .arm-l { animation: armRestL 3.8s ease-in-out infinite; }
-.state-calm .arm-r, .state-allowed .arm-r, .state-watching .arm-r { animation: armRestR 3.8s ease-in-out infinite; }
-@keyframes armRestL { 0%,100% { transform: rotate(0deg) } 50% { transform: rotate(7deg) } }
-@keyframes armRestR { 0%,100% { transform: rotate(0deg) } 50% { transform: rotate(-7deg) } }
-@keyframes wave   { 0%,100% { transform: rotate(-14deg) } 50% { transform: rotate(-52deg) } }
-@keyframes cheerL { 0%,100% { transform: rotate(18deg) }  50% { transform: rotate(46deg) } }
-@keyframes cheerR { 0%,100% { transform: rotate(-18deg) } 50% { transform: rotate(-46deg) } }
+.state-calm .arm-l,
+.state-allowed .arm-l,
+.state-watching .arm-l {
+  animation: armRestL 3.8s ease-in-out infinite;
+}
+.state-calm .arm-r,
+.state-allowed .arm-r,
+.state-watching .arm-r {
+  animation: armRestR 3.8s ease-in-out infinite;
+}
+@keyframes armRestL {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(7deg);
+  }
+}
+@keyframes armRestR {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-7deg);
+  }
+}
+@keyframes wave {
+  0%,
+  100% {
+    transform: rotate(90deg);
+  }
+  50% {
+    transform: rotate(-90deg);
+  }
+}
+@keyframes cheerL {
+  0%,
+  100% {
+    transform: rotate(18deg);
+  }
+  50% {
+    transform: rotate(46deg);
+  }
+}
+@keyframes cheerR {
+  0%,
+  100% {
+    transform: rotate(-18deg);
+  }
+  50% {
+    transform: rotate(-46deg);
+  }
+}
 
 .aura {
   position: absolute;
-  width: 140px; height: 140px;
+  width: 140px;
+  height: 140px;
   margin-bottom: 46px;
   border-radius: 50%;
   background: radial-gradient(circle, var(--accent) 0%, transparent 62%);
@@ -162,73 +276,310 @@ html, body {
 
 /* ---------------- body animations ---------------- */
 
-@keyframes bob     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
-@keyframes bobSlow { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-3px) scale(1.006)} }
-@keyframes shake   { 0%,100%{transform:translateX(0) rotate(0)} 15%{transform:translateX(-6px) rotate(-5deg)}
-                     30%{transform:translateX(6px) rotate(5deg)} 45%{transform:translateX(-5px) rotate(-4deg)}
-                     60%{transform:translateX(4px) rotate(3deg)} 75%{transform:translateX(-2px) rotate(-1deg)} }
-@keyframes hop     { 0%,100%{transform:translateY(0) scale(1)} 25%{transform:translateY(-20px) scale(1.04,.96)}
-                     45%{transform:translateY(0) scale(.94,1.06)} 65%{transform:translateY(-9px)} }
-@keyframes lean    { 0%,100%{transform:rotate(0)} 50%{transform:rotate(-7deg)} }
-@keyframes peer    { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-2px) scale(1.03,.98)} }
-@keyframes sway    { 0%,100%{transform:rotate(-2.5deg)} 50%{transform:rotate(2.5deg)} }
-@keyframes perk    { 0%{transform:translateY(0) scale(1)} 100%{transform:translateY(-6px) scale(1.06)} }
-@keyframes forward { 0%,100%{transform:translateY(-2px) scale(1.05,.97) rotate(-3deg)}
-                     50%{transform:translateY(-5px) scale(1.07,.95) rotate(-5deg)} }
-@keyframes nod     { 0%{transform:rotate(0)} 30%{transform:rotate(9deg) translateY(2px)}
-                     60%{transform:rotate(-3deg)} 100%{transform:rotate(0)} }
-@keyframes stretch { 0%{transform:scale(1)} 30%{transform:scale(.88,1.16) rotate(-4deg)}
-                     60%{transform:scale(1.08,.92) rotate(3deg)} 100%{transform:scale(1)} }
-@keyframes wobble  { 0%,100%{transform:rotate(-5deg) scale(.94,1.08)} 50%{transform:rotate(5deg) scale(1.06,.93)} }
-@keyframes glitch  { 0%,100%{transform:translate(0,0)} 10%{transform:translate(-4px,2px) skewX(6deg)}
-                     20%{transform:translate(3px,-2px) skewX(-5deg)} 30%{transform:translate(-2px,1px)}
-                     40%{transform:translate(4px,2px) skewX(4deg)} 55%{transform:translate(-1px,-1px)}
-                     70%{transform:translate(2px,0) skewX(-2deg)} 85%{transform:translate(-1px,1px)} }
-@keyframes snooze  { 0%,100%{transform:translateY(4px) scale(1.02,.97)} 50%{transform:translateY(7px) scale(1.04,.94)} }
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+@keyframes bobSlow {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-3px) scale(1.006);
+  }
+}
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0);
+  }
+  15% {
+    transform: translateX(-6px) rotate(-5deg);
+  }
+  30% {
+    transform: translateX(6px) rotate(5deg);
+  }
+  45% {
+    transform: translateX(-5px) rotate(-4deg);
+  }
+  60% {
+    transform: translateX(4px) rotate(3deg);
+  }
+  75% {
+    transform: translateX(-2px) rotate(-1deg);
+  }
+}
+@keyframes hop {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  25% {
+    transform: translateY(-20px) scale(1.04, 0.96);
+  }
+  45% {
+    transform: translateY(0) scale(0.94, 1.06);
+  }
+  65% {
+    transform: translateY(-9px);
+  }
+}
+@keyframes lean {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  50% {
+    transform: rotate(-7deg);
+  }
+}
+@keyframes peer {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-2px) scale(1.03, 0.98);
+  }
+}
+@keyframes sway {
+  0%,
+  100% {
+    transform: rotate(-2.5deg);
+  }
+  50% {
+    transform: rotate(2.5deg);
+  }
+}
+@keyframes perk {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    transform: translateY(-6px) scale(1.06);
+  }
+}
+@keyframes forward {
+  0%,
+  100% {
+    transform: translateY(-2px) scale(1.05, 0.97) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(-5px) scale(1.07, 0.95) rotate(-5deg);
+  }
+}
+@keyframes nod {
+  0% {
+    transform: rotate(0);
+  }
+  30% {
+    transform: rotate(9deg) translateY(2px);
+  }
+  60% {
+    transform: rotate(-3deg);
+  }
+  100% {
+    transform: rotate(0);
+  }
+}
+@keyframes stretch {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(0.88, 1.16) rotate(-4deg);
+  }
+  60% {
+    transform: scale(1.08, 0.92) rotate(3deg);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes wobble {
+  0%,
+  100% {
+    transform: rotate(-5deg) scale(0.94, 1.08);
+  }
+  50% {
+    transform: rotate(5deg) scale(1.06, 0.93);
+  }
+}
+@keyframes glitch {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  10% {
+    transform: translate(-4px, 2px) skewX(6deg);
+  }
+  20% {
+    transform: translate(3px, -2px) skewX(-5deg);
+  }
+  30% {
+    transform: translate(-2px, 1px);
+  }
+  40% {
+    transform: translate(4px, 2px) skewX(4deg);
+  }
+  55% {
+    transform: translate(-1px, -1px);
+  }
+  70% {
+    transform: translate(2px, 0) skewX(-2deg);
+  }
+  85% {
+    transform: translate(-1px, 1px);
+  }
+}
+@keyframes snooze {
+  0%,
+  100% {
+    transform: translateY(4px) scale(1.02, 0.97);
+  }
+  50% {
+    transform: translateY(7px) scale(1.04, 0.94);
+  }
+}
 
-.state-calm        .grain { animation: bob 3.6s ease-in-out infinite; }
-.state-hover       .grain { animation: perk 260ms ease-out forwards; }
-.state-drag        .grain { animation: wobble 420ms ease-in-out infinite; }
-.state-thinking    .grain { animation: bobSlow 1.9s ease-in-out infinite; }
-.state-watching    .grain { animation: forward 1.1s ease-in-out infinite; }
-.state-checking    .grain { animation: peer 0.9s ease-in-out infinite; }
-.state-allowed     .grain { animation: nod 620ms ease-in-out 1, bob 3.6s ease-in-out infinite 620ms; }
-.state-suspicious  .grain { animation: sway 1.1s ease-in-out infinite; }
-.state-refused     .grain { animation: shake 0.55s ease-in-out 2, bob 3.6s ease-in-out infinite 1.1s; }
-.state-proving     .grain { animation: lean 1.5s ease-in-out infinite; }
-.state-rejecting   .grain { animation: lean 1.2s ease-in-out infinite; }
-.state-celebrating .grain { animation: hop 0.85s ease-in-out 2, bob 3.6s ease-in-out infinite 1.7s; }
-.state-error       .grain { animation: glitch 0.5s steps(2,end) 3, bob 3.6s ease-in-out infinite 1.5s; }
-.state-sleeping    .grain { animation: snooze 4.4s ease-in-out infinite; }
-.state-asking      .grain { animation: lean 1.6s ease-in-out infinite; }
-.state-offline     .grain { animation: bob 6s ease-in-out infinite; }
-.state-offline     #scene { opacity: .6; }
+.state-calm .grain {
+  animation: bob 3.6s ease-in-out infinite;
+}
+.state-hover .grain {
+  animation: perk 260ms ease-out forwards;
+}
+.state-drag .grain {
+  animation: wobble 420ms ease-in-out infinite;
+}
+.state-thinking .grain {
+  animation: bobSlow 1.9s ease-in-out infinite;
+}
+.state-watching .grain {
+  animation: forward 1.1s ease-in-out infinite;
+}
+.state-checking .grain {
+  animation: peer 0.9s ease-in-out infinite;
+}
+.state-allowed .grain {
+  animation:
+    nod 620ms ease-in-out 1,
+    bob 3.6s ease-in-out infinite 620ms;
+}
+.state-suspicious .grain {
+  animation: sway 1.1s ease-in-out infinite;
+}
+.state-refused .grain {
+  animation:
+    shake 0.55s ease-in-out 2,
+    bob 3.6s ease-in-out infinite 1.1s;
+}
+.state-proving .grain {
+  animation: lean 1.5s ease-in-out infinite;
+}
+.state-rejecting .grain {
+  animation: lean 1.2s ease-in-out infinite;
+}
+.state-celebrating .grain {
+  animation:
+    hop 0.85s ease-in-out 2,
+    bob 3.6s ease-in-out infinite 1.7s;
+}
+.state-error .grain {
+  animation:
+    glitch 0.5s steps(2, end) 3,
+    bob 3.6s ease-in-out infinite 1.5s;
+}
+.state-sleeping .grain {
+  animation: snooze 4.4s ease-in-out infinite;
+}
+.state-asking .grain {
+  animation: lean 1.6s ease-in-out infinite;
+}
+.state-offline .grain {
+  animation: bob 6s ease-in-out infinite;
+}
+.state-offline #scene {
+  opacity: 0.6;
+}
 
-.state-error #scene { filter: drop-shadow(2px 0 0 rgba(226,96,74,.55)) drop-shadow(-2px 0 0 rgba(90,169,230,.45)); }
+.state-error #scene {
+  filter: drop-shadow(2px 0 0 rgba(226, 96, 74, 0.55))
+    drop-shadow(-2px 0 0 rgba(90, 169, 230, 0.45));
+}
 
 /* ---------------- accents ---------------- */
 
-.state-calm        { --accent: var(--calm); }
-.state-hover       { --accent: var(--hover); }
-.state-drag        { --accent: var(--drag); }
-.state-thinking    { --accent: var(--thinking); }
-.state-watching    { --accent: var(--watching); }
-.state-checking    { --accent: var(--checking); }
-.state-allowed     { --accent: var(--allowed); }
-.state-suspicious  { --accent: var(--suspicious); }
-.state-refused     { --accent: var(--refused); }
-.state-proving     { --accent: var(--proving); }
-.state-rejecting   { --accent: var(--rejecting); }
-.state-celebrating { --accent: var(--celebrating); }
-.state-error       { --accent: var(--error); }
-.state-sleeping    { --accent: var(--sleeping); }
-.state-asking      { --accent: var(--asking); }
-.state-offline     { --accent: var(--offline); }
+.state-calm {
+  --accent: var(--calm);
+}
+.state-hover {
+  --accent: var(--hover);
+}
+.state-drag {
+  --accent: var(--drag);
+}
+.state-thinking {
+  --accent: var(--thinking);
+}
+.state-watching {
+  --accent: var(--watching);
+}
+.state-checking {
+  --accent: var(--checking);
+}
+.state-allowed {
+  --accent: var(--allowed);
+}
+.state-suspicious {
+  --accent: var(--suspicious);
+}
+.state-refused {
+  --accent: var(--refused);
+}
+.state-proving {
+  --accent: var(--proving);
+}
+.state-rejecting {
+  --accent: var(--rejecting);
+}
+.state-celebrating {
+  --accent: var(--celebrating);
+}
+.state-error {
+  --accent: var(--error);
+}
+.state-sleeping {
+  --accent: var(--sleeping);
+}
+.state-asking {
+  --accent: var(--asking);
+}
+.state-offline {
+  --accent: var(--offline);
+}
 
-.state-refused .aura, .state-rejecting .aura, .state-error .aura { opacity: .30; }
-.state-celebrating .aura, .state-allowed .aura { opacity: .34; }
-.state-suspicious .aura, .state-checking .aura { opacity: .26; }
-.state-hover .aura { opacity: .28; }
+.state-refused .aura,
+.state-rejecting .aura,
+.state-error .aura {
+  opacity: 0.3;
+}
+.state-celebrating .aura,
+.state-allowed .aura {
+  opacity: 0.34;
+}
+.state-suspicious .aura,
+.state-checking .aura {
+  opacity: 0.26;
+}
+.state-hover .aura {
+  opacity: 0.28;
+}
 
 /* ---------------- eyes: blink and glance ---------------- */
 
@@ -237,31 +588,138 @@ html, body {
   transform-origin: center;
   transition: transform 240ms ease;
 }
-#app.blink .eyes { animation: blink 150ms ease-in-out; }
-@keyframes blink { 0%,100% { transform: scaleY(1) } 45% { transform: scaleY(.08) } }
+#app.blink .eyes {
+  animation: blink 150ms ease-in-out;
+}
+@keyframes blink {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  45% {
+    transform: scaleY(0.08);
+  }
+}
 
-#app.glance-left  .eyes { transform: translateX(-3.5px); }
-#app.glance-right .eyes { transform: translateX(3.5px); }
+#app.glance-left .eyes {
+  transform: translateX(-3.5px);
+}
+#app.glance-right .eyes {
+  transform: translateX(3.5px);
+}
 
 /* ---------------- props ---------------- */
 
-.prop-pop     { animation: propPop 340ms cubic-bezier(.2,1.5,.4,1) both; transform-box: fill-box; transform-origin: center; }
-.prop-tilt    { animation: propTilt 2.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
-.prop-scan    { animation: propScan 1.5s ease-in-out infinite; }
-.prop-antenna { animation: propAntenna 1.2s ease-in-out infinite; transform-box: fill-box; transform-origin: bottom center; }
-.prop-stamp   { animation: propStamp 420ms cubic-bezier(.2,1.8,.4,1) both; transform-box: fill-box; transform-origin: center; }
-.prop-wave    { animation: propWave 520ms ease-in-out infinite; transform-box: fill-box; transform-origin: bottom right; }
-.prop-z1      { animation: propZ 3.2s ease-in-out infinite; }
-.prop-z2      { animation: propZ 3.2s ease-in-out infinite .6s; }
+.prop-pop {
+  animation: propPop 340ms cubic-bezier(0.2, 1.5, 0.4, 1) both;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.prop-tilt {
+  animation: propTilt 2.2s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.prop-scan {
+  animation: propScan 1.5s ease-in-out infinite;
+}
+.prop-antenna {
+  animation: propAntenna 1.2s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: bottom center;
+}
+.prop-stamp {
+  animation: propStamp 420ms cubic-bezier(0.2, 1.8, 0.4, 1) both;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.prop-wave {
+  animation: propWave 520ms ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: bottom right;
+}
+.prop-z1 {
+  animation: propZ 3.2s ease-in-out infinite;
+}
+.prop-z2 {
+  animation: propZ 3.2s ease-in-out infinite 0.6s;
+}
 
-@keyframes propPop     { from { transform: scale(0) rotate(-25deg); opacity: 0 } to { transform: none; opacity: 1 } }
-@keyframes propTilt    { 0%,100% { transform: rotate(-4deg) } 50% { transform: rotate(4deg) } }
-@keyframes propScan    { 0%,100% { transform: translate(0,0) } 50% { transform: translate(-26px, -14px) } }
-@keyframes propAntenna { 0%,100% { transform: scaleY(1); opacity: .75 } 50% { transform: scaleY(1.18); opacity: 1 } }
-@keyframes propStamp   { from { transform: scale(2.4); opacity: 0 } 70% { transform: scale(.96); opacity: 1 } to { transform: none; opacity: 1 } }
-@keyframes propWave    { 0%,100% { transform: rotate(-14deg) } 50% { transform: rotate(16deg) } }
-@keyframes propZ       { 0% { transform: translate(0,0); opacity: .1 } 40% { opacity: .55 }
-                         100% { transform: translate(6px,-14px); opacity: 0 } }
+@keyframes propPop {
+  from {
+    transform: scale(0) rotate(-25deg);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes propTilt {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+}
+@keyframes propScan {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-26px, -14px);
+  }
+}
+@keyframes propAntenna {
+  0%,
+  100% {
+    transform: scaleY(1);
+    opacity: 0.75;
+  }
+  50% {
+    transform: scaleY(1.18);
+    opacity: 1;
+  }
+}
+@keyframes propStamp {
+  from {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(0.96);
+    opacity: 1;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes propWave {
+  0%,
+  100% {
+    transform: rotate(-14deg);
+  }
+  50% {
+    transform: rotate(16deg);
+  }
+}
+@keyframes propZ {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0.1;
+  }
+  40% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translate(6px, -14px);
+    opacity: 0;
+  }
+}
 
 /* ---------------- tray ---------------- */
 
@@ -280,18 +738,43 @@ html, body {
 .mood {
   color: var(--accent);
   font-weight: 700;
-  letter-spacing: .06em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   font-size: 9.5px;
 }
-.counts { display: flex; gap: 6px; font-family: ui-monospace, Consolas, monospace; }
-.c { display: inline-flex; align-items: center; gap: 2px; }
-.c::before { content: ""; width: 5px; height: 5px; border-radius: 50%; display: inline-block; }
-.c.ok::before   { background: var(--calm); }
-.c.stop::before { background: var(--refused); }
-.c.good::before { background: var(--celebrating); }
-.c.bad::before  { background: var(--rejecting); }
-.c b { color: var(--ink); font-weight: 600; }
+.counts {
+  display: flex;
+  gap: 6px;
+  font-family: ui-monospace, Consolas, monospace;
+}
+.c {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.c::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.c.ok::before {
+  background: var(--calm);
+}
+.c.stop::before {
+  background: var(--refused);
+}
+.c.good::before {
+  background: var(--celebrating);
+}
+.c.bad::before {
+  background: var(--rejecting);
+}
+.c b {
+  color: var(--ink);
+  font-weight: 600;
+}
 
 .ghost {
   -webkit-app-region: no-drag;
@@ -304,7 +787,49 @@ html, body {
   padding: 1px 4px;
   border-radius: 4px;
 }
-.ghost:hover { color: var(--ink); background: rgba(255,255,255,.09); }
+.ghost:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.dev-panel {
+  -webkit-app-region: no-drag;
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 300px;
+  padding: 6px 8px;
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 10.5px;
+}
+.dev-panel[hidden] {
+  display: none;
+}
+.dev-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+.dev-field span {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.dev-field select {
+  -webkit-app-region: no-drag;
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--ink);
+  border: 1px solid var(--panel-edge);
+  border-radius: 6px;
+  padding: 3px 4px;
+  font: inherit;
+}
 
 /* ---------------- log ---------------- */
 
@@ -325,29 +850,79 @@ html, body {
   flex-direction: column-reverse;
   gap: 3px;
 }
-.log[hidden] { display: none; }
+.log[hidden] {
+  display: none;
+}
 .log li {
-  display: flex; gap: 6px; align-items: baseline;
-  padding: 2px 4px; border-radius: 5px;
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  padding: 2px 4px;
+  border-radius: 5px;
   font-family: ui-monospace, Consolas, monospace;
 }
-.log li .k { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 2px; margin-top: 3px; }
-.log li .t { color: var(--ink); word-break: break-word; }
-.log li.allow  .k { background: var(--calm); }
-.log li.block  .k { background: var(--refused); }
-.log li.warn   .k { background: var(--suspicious); }
-.log li.pass   .k { background: var(--celebrating); }
-.log li.fail   .k { background: var(--rejecting); }
-.log li.err    .k { background: var(--error); }
-.log li.ask    .k { background: var(--asking); }
-.log li.info   .k { background: var(--offline); }
-.log li.block .t, .log li.fail .t { color: #ffd9d1; }
-.log li.err .t { color: #ffcdbf; }
+.log li .k {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  margin-top: 3px;
+}
+.log li .t {
+  color: var(--ink);
+  word-break: break-word;
+}
+.log li.allow .k {
+  background: var(--calm);
+}
+.log li.block .k {
+  background: var(--refused);
+}
+.log li.warn .k {
+  background: var(--suspicious);
+}
+.log li.pass .k {
+  background: var(--celebrating);
+}
+.log li.fail .k {
+  background: var(--rejecting);
+}
+.log li.err .k {
+  background: var(--error);
+}
+.log li.ask .k {
+  background: var(--asking);
+}
+.log li.info .k {
+  background: var(--offline);
+}
+.log li.block .t,
+.log li.fail .t {
+  color: #ffd9d1;
+}
+.log li.err .t {
+  color: #ffcdbf;
+}
 
-.log::-webkit-scrollbar { width: 6px; }
-.log::-webkit-scrollbar-thumb { background: rgba(255,255,255,.16); border-radius: 3px; }
+.log::-webkit-scrollbar {
+  width: 6px;
+}
+.log::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 3px;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .grain, .bubble, .prop-pop, .prop-tilt, .prop-scan,
-  .prop-antenna, .prop-stamp, .prop-wave, .prop-z1, .prop-z2 { animation: none !important; }
+  .grain,
+  .bubble,
+  .prop-pop,
+  .prop-tilt,
+  .prop-scan,
+  .prop-antenna,
+  .prop-stamp,
+  .prop-wave,
+  .prop-z1,
+  .prop-z2 {
+    animation: none !important;
+  }
 }
