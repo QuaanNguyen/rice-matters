@@ -100,13 +100,15 @@ function isBusy(event) {
 
 function isIdle(event) {
   if (event.type === "session.idle") return true;
+  if (event.type === "session.error") return true;
   const props = event.properties || event;
   const status = props.status;
-  return status === "idle" || status?.type === "idle";
+  const type = typeof status === "string" ? status : status?.type;
+  return ["idle", "stopped", "stop", "cancelled", "canceled", "error"].includes(type);
 }
 
 // The plugin runs inside OpenCode, which is a Bun binary, so require() of the
-// electron package is not a reliable way to get the executable path — it works
+// electron package is not a reliable way to get the executable path - it works
 // under Node and silently returns nothing here, which is why Rice stopped
 // appearing while the run record kept filling. Look on disk first.
 const DIST_CANDIDATES = [
@@ -132,6 +134,7 @@ function electronBinary(petDir) {
 }
 
 function launchPet(inboxPath) {
+  if (process.env.RICE_NO_PET === "1") return;
   const petDir = path.join(repoRoot, "pet");
   const bin = electronBinary(petDir);
   if (!bin) {
@@ -164,7 +167,7 @@ export const Rice = async ({ client, directory }) => {
   const workdir = directory || process.cwd();
   const protocol = loadProtocol(workdir);
   const inboxPath = process.env.RICE_EVENTS || defaultInboxPath();
-  const runsDir = path.join(os.homedir(), ".rice", "runs");
+  const runsDir = process.env.RICE_RUNS || path.join(os.homedir(), ".rice", "runs");
   const session = createSession({ protocol, workdir });
   const bus = new EventBus({ inboxPath, runsDir });
   const claimed = new Set();

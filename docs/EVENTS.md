@@ -1,20 +1,17 @@
-# Event schema (v1) — the contract between ASSAY and Pet Rice
+# Event schema (v1) - the contract between ASSAY and Pet Rice
 
-ASSAY decides. Rice expresses. They talk **only** through this stream.
-Nothing else is shared. Either half can be developed and demoed alone.
+ASSAY decides.
+Rice expresses.
+They talk **only** through the plugin inbox file.
+Nothing else is shared.
+Either half can be developed and demoed alone.
 
 ## Transport
 
-ASSAY runs a small HTTP server (default `127.0.0.1:4599`):
+The OpenCode plugin appends every event to the inbox file at `~/.rice/events.jsonl` by default.
+Pet Rice tails that file and reacts to each event.
 
-| Endpoint  | What it gives you                                                   |
-|-----------|---------------------------------------------------------------------|
-| `/events` | Server-Sent Events, live. Replays the last 50 events on connect.     |
-| `/state`  | JSON snapshot: current pet state, mood, counters, run id.            |
-| `/run`    | JSON: the whole current run (protocol + every event so far).         |
-| `/health` | `{"ok":true}`                                                        |
-
-Every event is also appended to `runs/<runId>.jsonl` — one JSON object per line.
+Every event is also appended to `runs/<runId>.jsonl` - one JSON object per line.
 That file **is** the run record.
 
 ## Event object
@@ -36,7 +33,8 @@ That file **is** the run record.
 }
 ```
 
-`seq` is monotonic within a run. `summary` is short and human-readable —
+`seq` is monotonic within a run.
+`summary` is short and human-readable.
 Rice shows it in a speech bubble, so keep it under ~60 chars.
 
 ## `type` values
@@ -44,21 +42,21 @@ Rice shows it in a speech bubble, so keep it under ~60 chars.
 | type        | When                                                    | Typical `status`      |
 |-------------|---------------------------------------------------------|-----------------------|
 | `run`       | Run started or ended                                    | `start` / `end`       |
-| `protocol`  | Protocol loaded — carries the envelope in `detail`      | `ok`                  |
-| `thinking`  | A request reached ASSAY; the agent is working           | `ok`                  |
+| `protocol`  | Protocol loaded - carries the envelope in `detail`      | `ok`                  |
+| `thinking`  | The agent started or stopped thinking                   | `ok` / `idle`         |
 | `action`    | A tool call was proposed and allowed                    | `allow`               |
 | `excursion` | A tool call was proposed and refused                    | `block`               |
 | `suspicious`| A tool *result* contained instruction-like text         | `warn`                |
 | `toolerror` | A tool *result* came back broken                        | `error`               |
 | `claim`     | The agent asserted it finished something                | `open`                |
 | `verdict`   | Evidence for a claim was checked                        | `pass` / `fail`       |
-| `ask`       | Genuinely ambiguous — a human should decide             | `ask`                 |
+| `ask`       | Genuinely ambiguous - a human should decide             | `ask`                 |
 | `mood`      | Aggregate mood changed                                  | `ok`                  |
 
 ## `petState` values
 
-Rice renders exactly one of these. ASSAY always sets it, so the pet never
-has to derive state itself.
+Rice renders exactly one of these.
+ASSAY always sets it, so the pet never has to derive state itself.
 
 Fourteen agent-driven states, plus two the *person* causes.
 
@@ -75,13 +73,12 @@ Fourteen agent-driven states, plus two the *person* causes.
 | `rejecting`   | leans, `NOT VERIFIED` stamp lands  | The claim did not match the evidence               |
 | `celebrating` | hops, sparkles                     | Evidence held up                                   |
 | `error`       | glitches, spiral eyes              | A tool failed or a command crashed                 |
-| `asking`      | head tilt, `?`                     | Genuinely ambiguous — a human should decide        |
+| `asking`      | head tilt, `?`                     | Genuinely ambiguous - a human should decide        |
 | `sleeping`    | dozes, `z z`                       | Connected, but nothing for 90s                     |
 | `offline`     | greyed out, asleep                 | ASSAY is not running                               |
 
-Two more are set by the renderer, never by ASSAY, and sit *on top* of whatever
-agent state is current — when the interaction ends, the state underneath is
-still there:
+Two more are set by the renderer, never by ASSAY, and sit *on top* of whatever agent state is current.
+When the interaction ends, the state underneath is still there:
 
 | petState | Trigger                          |
 |----------|----------------------------------|
@@ -90,7 +87,7 @@ still there:
 
 ## Mood
 
-`/state` carries a `mood` object:
+The run state carries a `mood` object:
 
 ```json
 { "level": "stressed", "score": -3, "allowed": 14, "blocked": 3, "verified": 1, "rejected": 1 }
@@ -105,6 +102,6 @@ Rice uses this for idle posture between events, so it feels like it remembers.
 1. ASSAY never imports pet code. Pet never imports ASSAY code.
 2. ASSAY always sets `petState`, so the pet never has to infer it from `type`.
 3. Rice **never blocks anything**. It reports what already happened.
-4. Silence is the resting state. No event, no reaction — routine allowed
+4. Silence is the resting state. No event, no reaction - routine allowed
    actions tick a counter and, apart from a quick nod, say nothing.
 5. `detail` is free-form and may grow; consumers must ignore unknown keys.

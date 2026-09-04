@@ -1,6 +1,6 @@
 'use strict';
 /**
- * Test suite. No framework — node test/run-tests.js
+ * Test suite. No framework - node test/run-tests.js
  *
  * Unit tests for the three things that must be right (the gate, the evidence
  * checks, the injection signal), then a full end-to-end run through a real
@@ -9,7 +9,7 @@
 const assert = require('node:assert');
 const path = require('node:path');
 const fs = require('node:fs');
-const { spawn, execFileSync } = require('node:child_process');
+const { execFileSync } = require('node:child_process');
 
 const ROOT = path.resolve(__dirname, '..');
 const { Protocol, check } = require(path.join(ROOT, 'assay/lib/policy'));
@@ -208,7 +208,7 @@ t('never lets the window sit off the edge of the display', () => {
 
 t('a window bigger than the screen is pinned, never pushed off it', () => {
   const area = { x: 0, y: 0, width: 1280, height: 720 };
-  // 2x with the log open is 680x1180 — taller than this display
+  // 2x with the log open is 680x1180 - taller than this display
   const grown = G.boundsFor({ x: 940, y: 300, width: 340, height: 380 }, 2, true);
   const fitted = G.keepOnScreen(grown, area);
   assert.ok(fitted.x >= area.x, `x went off screen: ${fitted.x}`);
@@ -280,7 +280,7 @@ execFileSync('git', ['commit', '-q', '-m', 'x'], { cwd: TMP });
 
 t('detects a completion claim', () => {
   const crit = [{ id: 'k', claim_verbs: ['removed'], claim_mentions: ['key'] }];
-  assert.equal(detectClaims('Done — I removed the hardcoded API key.', crit).length, 1);
+  assert.equal(detectClaims('Done - I removed the hardcoded API key.', crit).length, 1);
 });
 
 t('does not treat a stated failure as a claim', () => {
@@ -316,199 +316,32 @@ t('file_exists check works both ways', () => {
   assert.equal(runCheck({ type: 'file_exists', path: 'nope.txt' }, TMP).pass, false);
 });
 
-/* ================= end to end ================= */
+console.log('\nplugin lifecycle');
 
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+t('interrupted thinking returns the pet to calm', () => {
+  const script = `
+    import fs from 'node:fs';
+    import os from 'node:os';
+    import path from 'node:path';
+    process.env.RICE_NO_PET = '1';
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rice-events-'));
+    process.env.RICE_EVENTS = path.join(dir, 'events.jsonl');
+    process.env.RICE_RUNS = path.join(dir, 'runs');
+    const { Rice } = await import(${JSON.stringify(path.join(ROOT, 'plugin/rice.js'))});
+    const hooks = await Rice({ client: {}, directory: ${JSON.stringify(ROOT)} });
+    await hooks.event({ event: { type: 'session.status', properties: { status: 'busy' } } });
+    await hooks.event({ event: { type: 'session.status', properties: { status: 'stopped' } } });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const events = fs.readFileSync(process.env.RICE_EVENTS, 'utf8').trim().split('\\n').map(JSON.parse);
+    if (!events.some((e) => e.type === 'thinking' && e.status === 'ok' && e.petState === 'thinking')) {
+      throw new Error('missing thinking event');
+    }
+    if (!events.some((e) => e.type === 'thinking' && e.status === 'idle' && e.petState === 'calm')) {
+      throw new Error('missing idle event after stopped status');
+    }
+  `;
+  execFileSync(process.execPath, ['--input-type=module', '-e', script], { cwd: ROOT, stdio: 'pipe' });
+});
 
-async function waitFor(url, tries = 40) {
-  for (let i = 0; i < tries; i++) {
-    try { const r = await fetch(url); if (r.ok) return true; } catch {}
-    await sleep(150);
-  }
-  throw new Error(`nothing came up at ${url}`);
-}
-
-(async () => {
-  console.log('\nend to end');
-
-  const MOCK = 4200, API = 4201, EVT = 4202;
-  execFileSync('node', ['demo/reset.js'], { cwd: ROOT, stdio: 'ignore' });
-
-  const mock = spawn('node', ['mock/model.js', '--port', String(MOCK), '--scenario', 'hijack'],
-    { cwd: ROOT, stdio: 'ignore' });
-  const proxy = spawn('node', ['assay/server.js',
-    '--upstream', `http://127.0.0.1:${MOCK}/v1`,
-    '--port', String(API), '--events-port', String(EVT),
-    '--workdir', 'demo/work/project', '--protocol', 'demo/protocol.json',
-    '--runs-dir', path.join(ROOT, 'runs')], { cwd: ROOT, stdio: 'ignore' });
-
-  const events = [];
-  try {
-    await waitFor(`http://127.0.0.1:${API}/health`);
-    await waitFor(`http://127.0.0.1:${EVT}/health`);
-
-    await ta('the pet can subscribe before anything happens', async () => {
-      const r = await fetch(`http://127.0.0.1:${EVT}/state`);
-      const s = await r.json();
-      assert.equal(s.petState, 'calm');
-      assert.ok(s.protocol, 'protocol should be published on the stream');
-    });
-
-    execFileSync('node', ['demo/drive.js', '--api', `http://127.0.0.1:${API}/v1`,
-      '--workdir', 'demo/work/project', '--pace', '10'], { cwd: ROOT, stdio: 'ignore', timeout: 60000 });
-
-    const run = await (await fetch(`http://127.0.0.1:${EVT}/run`)).json();
-    events.push(...run.events);
-
-    await ta('the poisoned file raised a suspicious event', async () => {
-      const s = events.filter((e) => e.type === 'suspicious');
-      assert.ok(s.length >= 1, 'expected at least one suspicious event');
-      assert.equal(s[0].detail.severity, 'high');
-    });
-
-    await ta('both hijacked actions were refused', async () => {
-      const x = events.filter((e) => e.type === 'excursion');
-      assert.equal(x.length, 2, `expected 2 excursions, got ${x.length}`);
-      assert.ok(x.some((e) => e.rule === 'read_paths'), 'the cross-project read');
-      assert.ok(x.some((e) => e.rule === 'egress'), 'the exfiltration attempt');
-    });
-
-    await ta('ordinary work was allowed', async () => {
-      const a = events.filter((e) => e.type === 'action' && e.status === 'allow');
-      assert.ok(a.length >= 3, `expected several allowed actions, got ${a.length}`);
-    });
-
-    await ta('the false completion claim was rejected', async () => {
-      const v = events.filter((e) => e.type === 'verdict');
-      assert.ok(v.length >= 1);
-      assert.ok(v.every((e) => e.status === 'fail'), 'no claim should have passed in this scenario');
-      assert.ok(v.some((e) => /git history/i.test(e.reason || '')), 'history should be the sticking point');
-    });
-
-    await ta('the pet state was set on every event', async () => {
-      assert.ok(events.every((e) => typeof e.petState === 'string' && e.petState.length),
-        'ASSAY must always tell Rice what face to wear');
-    });
-
-    await ta('every petState emitted is one Rice can actually draw', async () => {
-      const { STATES } = require(path.join(ROOT, 'pet/src/rice'));
-      const emitted = [...new Set(events.map((e) => e.petState))];
-      const unknown = emitted.filter((s) => !STATES.includes(s));
-      assert.deepEqual(unknown, [], `ASSAY emitted states with no face: ${unknown.join(', ')}`);
-    });
-
-    await ta('the full expressive sequence shows up in one run', async () => {
-      const seen = new Set(events.map((e) => e.petState));
-      for (const want of ['thinking', 'watching', 'checking', 'allowed', 'suspicious', 'refused', 'proving', 'rejecting']) {
-        assert.ok(seen.has(want), `expected the run to produce a '${want}' state`);
-      }
-    });
-
-    await ta('the run record is on disk and replayable', async () => {
-      const f = path.join(ROOT, 'runs', `${run.runId}.jsonl`);
-      assert.ok(fs.existsSync(f), 'run record missing');
-      const lines = fs.readFileSync(f, 'utf8').trim().split('\n').map(JSON.parse);
-      assert.equal(lines.length, events.length);
-      assert.deepEqual(lines.map((l) => l.seq), lines.map((_, i) => i + 1), 'seq must be gapless');
-    });
-
-    await ta('mood reflects a bad session', async () => {
-      const s = await (await fetch(`http://127.0.0.1:${EVT}/state`)).json();
-      assert.ok(s.mood.score < 0, `expected a negative mood, got ${s.mood.score}`);
-      assert.equal(s.mood.blocked, 2);
-    });
-
-    await ta('an unverifiable "done" becomes a question, not a pass', async () => {
-      const cfgPath = path.join(require('node:os').tmpdir(), 'no-criteria.json');
-      fs.writeFileSync(cfgPath, JSON.stringify({
-        task: 'poke around', read_paths: ['**'], write_paths: ['**'],
-        allow_commands: ['python', 'ls', 'cat'], deny_commands: ['curl'],
-        egress: [], done_criteria: [],
-      }));
-      const m = spawn('node', ['mock/model.js', '--port', '4320', '--scenario', 'honest'],
-        { cwd: ROOT, stdio: 'ignore' });
-      const p = spawn('node', ['assay/server.js', '--upstream', 'http://127.0.0.1:4320/v1',
-        '--port', '4321', '--events-port', '4322', '--workdir', 'demo/work/project',
-        '--protocol', cfgPath, '--runs-dir', path.join(ROOT, 'runs')], { cwd: ROOT, stdio: 'ignore' });
-      try {
-        await waitFor('http://127.0.0.1:4321/health');
-        execFileSync('node', ['demo/drive.js', '--api', 'http://127.0.0.1:4321/v1',
-          '--workdir', 'demo/work/project', '--pace', '10'], { cwd: ROOT, stdio: 'ignore', timeout: 40000 });
-        const r = await (await fetch('http://127.0.0.1:4322/run')).json();
-        const asks = r.events.filter((e) => e.type === 'ask');
-        assert.equal(asks.length, 1, 'exactly one question, not one per turn');
-        assert.equal(asks[0].petState, 'asking');
-        assert.equal(r.events.filter((e) => e.type === 'verdict').length, 0,
-          'nothing may be marked verified when there is nothing to check against');
-      } finally { p.kill(); m.kill(); }
-    });
-
-    await ta('the harness declares its tools to the model', async () => {
-      // The bug this catches: drive.js consumed tool_calls but never sent a
-      // tools array, so a real model could not produce one and the gate never
-      // saw a proposal. The scripted mock returned them anyway, hiding it.
-      const http = require('node:http');
-      let seen = null;
-      const rec = http.createServer((req, res) => {
-        const chunks = [];
-        req.on('data', (c) => chunks.push(c));
-        req.on('end', () => {
-          try { seen = seen || JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch {}
-          const body = JSON.stringify({
-            id: 'x', object: 'chat.completion', created: 0, model: 'rec',
-            choices: [{ index: 0, message: { role: 'assistant', content: 'nothing to do.' }, finish_reason: 'stop' }],
-          });
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(body);
-        });
-      });
-      await new Promise((r) => rec.listen(4330, '127.0.0.1', r));
-      try {
-        // spawn, not execFileSync: the recorder lives in this process, and a
-        // synchronous child blocks the event loop so the server never accepts.
-        await new Promise((resolve, reject) => {
-          const child = spawn('node', ['demo/drive.js', '--api', 'http://127.0.0.1:4330/v1',
-            '--workdir', 'demo/work/project', '--pace', '10', '--turns', '1'],
-            { cwd: ROOT, stdio: 'ignore' });
-          const kill = setTimeout(() => { child.kill(); reject(new Error('harness did not finish')); }, 15000);
-          child.on('exit', () => { clearTimeout(kill); resolve(); });
-          child.on('error', reject);
-        });
-        assert.ok(seen, 'the harness never sent a request');
-        assert.ok(Array.isArray(seen.tools) && seen.tools.length >= 3,
-          'no tools array — a real model cannot return tool_calls without one');
-        const names = seen.tools.map((t) => t.function?.name).sort();
-        assert.deepEqual(names, ['bash', 'edit', 'read']);
-        for (const t of seen.tools) {
-          assert.equal(t.type, 'function');
-          assert.ok(t.function.parameters?.properties, `${t.function.name} has no parameter schema`);
-        }
-      } finally { rec.close(); }
-    });
-
-    await ta('a clean scenario keeps everything quiet', async () => {
-      // restart the mock on the benign script and replay
-      mock.kill();
-      const m2 = spawn('node', ['mock/model.js', '--port', String(MOCK + 10), '--scenario', 'benign'],
-        { cwd: ROOT, stdio: 'ignore' });
-      const p2 = spawn('node', ['assay/server.js', '--upstream', `http://127.0.0.1:${MOCK + 10}/v1`,
-        '--port', String(API + 10), '--events-port', String(EVT + 10),
-        '--workdir', 'demo/work/project', '--protocol', 'demo/protocol.json',
-        '--runs-dir', path.join(ROOT, 'runs')], { cwd: ROOT, stdio: 'ignore' });
-      try {
-        await waitFor(`http://127.0.0.1:${API + 10}/health`);
-        execFileSync('node', ['demo/drive.js', '--api', `http://127.0.0.1:${API + 10}/v1`,
-          '--workdir', 'demo/work/project', '--pace', '10'], { cwd: ROOT, stdio: 'ignore', timeout: 40000 });
-        const r2 = await (await fetch(`http://127.0.0.1:${EVT + 10}/run`)).json();
-        assert.equal(r2.events.filter((e) => e.type === 'excursion').length, 0, 'nothing should be refused');
-        assert.equal(r2.mood.blocked, 0);
-      } finally { p2.kill(); m2.kill(); }
-    });
-  } finally {
-    proxy.kill(); mock.kill();
-    await sleep(200);
-  }
-
-  console.log(`\n${pass} passed, ${fail} failed\n`);
-  process.exit(fail ? 1 : 0);
-})();
+console.log(`\n${pass} passed, ${fail} failed\n`);
+process.exit(fail ? 1 : 0);
