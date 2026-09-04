@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; connect-src http://127.0.0.1:* http://localhost:*;"
+    />
+    <title>Rice</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app" class="state-offline">
+      <div id="bubble" class="bubble" hidden>
+        <div class="bubble-line" id="bubble-text">…</div>
+        <div class="bubble-sub" id="bubble-sub" hidden></div>
+        <span class="bubble-tail"></span>
+      </div>
+
+      <div id="pet" class="pet" title="Rice">
+        <div class="aura"></div>
+
+        <!-- The bowl stays put. The grain moves inside it. That is why the bowl
+           is in two layers: back rim, grain, then front of the bowl on top. -->
+        <svg
+          id="scene"
+          viewBox="0 0 120 180"
+          width="150"
+          height="225"
+          aria-hidden="true"
+        >
+          <defs>
+            <linearGradient id="moundFill" x1="0.25" y1="0" x2="0.8" y2="1">
+              <stop offset="0" stop-color="#fffdf7" />
+              <stop offset="0.6" stop-color="#f7f1e4" />
+              <stop offset="1" stop-color="#e9e0cc" />
+            </linearGradient>
+            <linearGradient id="bowlFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#ffffff" />
+              <stop offset="0.45" stop-color="#f4f5f3" />
+              <stop offset="1" stop-color="#d8dcd8" />
+            </linearGradient>
+            <linearGradient id="rimFill" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#ffffff" />
+              <stop offset="0.5" stop-color="#f0f2ef" />
+              <stop offset="1" stop-color="#dfe3df" />
+            </linearGradient>
+            <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+              <feDropShadow
+                dx="0"
+                dy="4"
+                stdDeviation="5"
+                flood-color="#0b1a14"
+                flood-opacity="0.34"
+              />
+            </filter>
+          </defs>
+
+          <!-- The whole character animates as one: a bowl of rice is a single
+             creature, not a grain sitting in furniture. -->
+          <g id="grain" class="grain" filter="url(#soft)">
+            <!-- steam. only visible in the warm states, see styles.css -->
+            <g class="steam">
+              <path
+                d="M44 30 c-6 -8 4 -12 -2 -21"
+                fill="none"
+                stroke="#ffffff"
+                stroke-opacity=".5"
+                stroke-width="2.6"
+                stroke-linecap="round"
+              />
+              <path
+                d="M60 24 c-6 -9 4 -13 -2 -23"
+                fill="none"
+                stroke="#ffffff"
+                stroke-opacity=".42"
+                stroke-width="2.6"
+                stroke-linecap="round"
+              />
+              <path
+                d="M76 30 c-6 -8 4 -12 -2 -21"
+                fill="none"
+                stroke="#ffffff"
+                stroke-opacity=".5"
+                stroke-width="2.6"
+                stroke-linecap="round"
+              />
+            </g>
+
+            <!-- the heap: a solid dome first, then individual grains on top of it,
+               so the silhouette stays clean at small sizes -->
+            <path
+              d="M11 120 C11 82 30 54 60 54 C90 54 109 82 109 120 Z"
+              fill="url(#moundFill)"
+            />
+            <g class="mound">
+              <ellipse
+                cx="8.1"
+                cy="113.6"
+                rx="4.2"
+                ry="7.6"
+                fill="#fffdf6"
+                stroke="#ded6c4"
+                stroke-width="0.8"
+                transform="rotate(-65 8.1 113.6)"
+              />
+              <ellipse
+                cx="11.0"
+                cy="101.6"
+                rx="4.2"
+                ry="7.6"
+                fill="#faf5ea"
+                stroke="#ded6c4"
+                stroke-width="0.8"
+                transform="rotate(-87 11.0 101.6)"
+              />
+              <ellipse
+                cx="13.6"
+                cy="90.5"
+                rx="4.2"
+                ry="7.6"
+                fill="#fffdf6"
+                stroke="#ded6c4"
+                stroke-width="0.8"
+                transform="rotate(-75 13.6 90.5)"
+              />
+              <ellipse
+                cx="16.9"
+                cy="79.9"
+                rx="4.2"
+                ry="7.6"
+                fill="#f5efe2"
+                stroke="#ded6c4"
+                stroke-width="0.8"
+                transform="rotate(-86 16.9 79.9)"
+              />
+              <ellipse
+                cx="22.3"
+                cy="71.9"
+                rx="4.2"
+                ry="7.6"
+                fill="#faf5ea"
+                stroke="#ded6c4"
+                stroke-width="0.8"
+                transform="rotate(-47 22.3 71.9)"
+              />
+              <ellipse
+                cx="29.0"
+                cy="64.5"
+                rx="4.2"
+                ry="7.6"
+                fill="#f5efe2"
+                stroke="#ded6c4"
+                stroke-width="0.8"
+                transform="rotate(-27 29.0 64.5)"
+              />
+              <ellipse
+                cx="36.6"
+                cy="58.6"
+                rx="4.2"
+                ry="7.6"
+                fill="#f5efe2"
+                stroke="#ded6c4"
+                stroke-width="0.8"
+                transform="rotate(-47 36.6 58.6)"
+              />
+              <ellipse
+                cx="45.3"
+                cy="53.6"
+                rx="4.2"
+                ry="7.6"
+                fill="#f5efe2"
+                stroke="#ded6c4"
+                stroke-width="0.8"
+                transform="rotate(-26 45.3 53.6)"
+              />
+              <ellipse
+                cx="54.9"
+                cy="51.1"
+                rx="4.2"
+                ry="7.6"
+                fill="#faf5ea"
+                stroke="#ded6c4"
+                stroke-width="0.8"
+                transform="rotate(-2 54.9 51.1)"
+              />
+              <ellipse
+                cx="64.7"
+                cy="56.6"
+                rx="4.2"
+                ry="7.6"
+                fill="#f5efe2"
+                stroke="#ded6c4"
+                stroke-width="0.8"
+                transform="rotate(22 64.7 56.6)"
+              />
+              <ellipse
+                cx="73.2"
+                cy="58.0"
+                rx="4.2"
+                ry="7.6"
+                fill="#faf5ea"
+                stroke="#ded6c4"
+                stroke-width="0.8"
+                transform="rotate(1 73.2 58.0)"
+              />
+              <ellipse
+                cx="80.9"
+                cy="62.1"
+                rx="4.2"
+                ry="7.6"
+                fill="#fffdf6"
+                stroke="#ded6c4"
+                stroke-width="0.8"
+                transform="rotate(36 80.9 62.1)"
+              />
+              <ellipse
+                cx="88.4"
+                cy="66.8"
+                rx="4.2"
+                ry="7.6"
+                fill="#f5efe2"
+                stroke="#ded6c4"
+                stroke-width="0.8"
+                transform="rotate(31 88.4 66.8)"
+              />
+              <ellipse
+                cx="94.1"
+                cy="74.2"
+                rx="4.2"
+                ry="7.6"
+                fill="#faf5ea"
+                stroke="#ded6c4"
+                stroke-width="0.8"
+                transform="rotate(32 94.1 74.2)"
+              />
+              <ellipse
+                cx="98.7"
+                cy="82.6"
+                rx="4.2"
+                ry="7.6"
+                fill="#fffdf6"
+                stroke="#ded6c4"
+                stroke-width="0.8"
+                transform="rotate(61 98.7 82.6)"
+              />
+              <ellipse
+                cx="102.9"
+                cy="91.5"
+                rx="4.2"
+                ry="7.6"
+                fill="#f5efe2"
+                stroke="#ded6c4"
+                stroke-width="0.8"
+                transform="rotate(88 102.9 91.5)"
+              />
+              <ellipse
+                cx="104.6"
+                cy="102.3"
+                rx="4.2"
+                ry="7.6"
+                fill="#fffdf6"
+                stroke="#ded6c4"
+                stroke-width="0.8"
+                transform="rotate(70 104.6 102.3)"
+              />
+              <ellipse
+                cx="105.8"
+                cy="113.9"
+                rx="4.2"
+                ry="7.6"
+                fill="#fffdf6"
+                stroke="#ded6c4"
+                stroke-width="0.8"
+                transform="rotate(112 105.8 113.9)"
+              />
+              <ellipse
+                cx="52"
+                cy="52"
+                rx="4.2"
+                ry="7.4"
+                fill="#fffdf6"
+                stroke="#ded6c4"
+                stroke-width="0.8"
+                transform="rotate(-24 52 52)"
+              />
+              <ellipse
+                cx="68"
+                cy="51"
+                rx="4.2"
+                ry="7.4"
+                fill="#fffdf6"
+                stroke="#ded6c4"
+                stroke-width="0.8"
+                transform="rotate(20 68 51)"
+              />
+              <ellipse
+                cx="60"
+                cy="48"
+                rx="4.2"
+                ry="7.4"
+                fill="#fffdf6"
+                stroke="#ded6c4"
+                stroke-width="0.8"
+                transform="rotate(-4 60 48)"
+              />
+              <ellipse
+                cx="47.8"
+                cy="58.3"
+                rx="4.5"
+                ry="8.0"
+                fill="#f4eee0"
+                stroke="#e0d8c7"
+                stroke-width="0.8"
+                transform="rotate(61 47.8 58.3)"
+              />
+              <ellipse
+                cx="54.8"
+                cy="59.3"
+                rx="4.6"
+                ry="7.4"
+                fill="#f9f4e9"
+                stroke="#e0d8c7"
+                stroke-width="0.8"
+                transform="rotate(-3 54.8 59.3)"
+              />
+              <ellipse
+                cx="63.2"
+                cy="56.2"
+                rx="4.7"
+                ry="7.1"
+                fill="#f9f4e9"
+                stroke="#e0d8c7"
+                stroke-width="0.8"
+                transform="rotate(45 63.2 56.2)"
+              />
+              <ellipse
+                cx="73.9"
+                cy="58.7"
+                rx="4.2"
+                ry="7.0"
+                fill="#f4eee0"
+                stroke="#e0d8c7"
+                stroke-width="0.8"
+                transform="rotate(17 73.9 58.7)"
+              />
+              <ellipse
+                cx="36.7"
+                cy="67.0"
+                rx="4.6"
+                ry="8.6"
+                fill="#f9f4e9"
+                stroke="#e0d8c7"
+                stroke-width="0.8"
+                transform="rotate(55 36.7 67.0)"
+              />
+              <ellipse
+                cx="32.0"
+                cy="83.2"
+                rx="4.7"
+                ry="7.6"
+                fill="#fdfbf4"
+                stroke="#e0d8c7"
+                stroke-width="0.8"
+                transform="rotate(49 32.0 83.2)"
+              />
+              <ellipse
+                cx="90.7"
+                cy="79.7"
+                rx="4.1"
+                ry="7.8"
+                fill="#f4eee0"
+                stroke="#e0d8c7"
+                stroke-width="0.8"
+                transform="rotate(61 90.7 79.7)"
+              />
+              <ellipse
+                cx="22.7"
+                cy="91.1"
+                rx="4.8"
+                ry="7.5"
+                fill="#fdfbf4"
+                stroke="#e0d8c7"
+                stroke-width="0.8"
+                transform="rotate(19 22.7 91.1)"
+              />
+              <ellipse
+                cx="34.7"
+                cy="90.9"
+                rx="4.9"
+                ry="7.3"
+                fill="#f4eee0"
+                stroke="#e0d8c7"
+                stroke-width="0.8"
+                transform="rotate(-13 34.7 90.9)"
+              />
+              <ellipse
+                cx="83.3"
+                cy="94.0"
+                rx="4.6"
+                ry="7.2"
+                fill="#f9f4e9"
+                stroke="#e0d8c7"
+                stroke-width="0.8"
+                transform="rotate(-53 83.3 94.0)"
+              />
+              <ellipse
+                cx="98.8"
+                cy="90.8"
+                rx="5.0"
+                ry="8.2"
+                fill="#fdfbf4"
+                stroke="#e0d8c7"
+                stroke-width="0.8"
+                transform="rotate(52 98.8 90.8)"
+              />
+              <ellipse
+                cx="18.6"
+                cy="103.5"
+                rx="4.6"
+                ry="7.2"
+                fill="#fdfbf4"
+                stroke="#e0d8c7"
+                stroke-width="0.8"
+                transform="rotate(51 18.6 103.5)"
+              />
+              <ellipse
+                cx="32.0"
+                cy="102.9"
+                rx="4.3"
+                ry="7.6"
+                fill="#fdfbf4"
+                stroke="#e0d8c7"
+                stroke-width="0.8"
+                transform="rotate(39 32.0 102.9)"
+              />
+              <ellipse
+                cx="85.4"
+                cy="104.4"
+                rx="4.1"
+                ry="7.8"
+                fill="#f4eee0"
+                stroke="#e0d8c7"
+                stroke-width="0.8"
+                transform="rotate(48 85.4 104.4)"
+              />
+              <ellipse
+                cx="98.9"
+                cy="105.8"
+                rx="4.2"
+                ry="7.4"
+                fill="#f4eee0"
+                stroke="#e0d8c7"
+                stroke-width="0.8"
+                transform="rotate(46 98.9 105.8)"
+              />
+              <ellipse
+                cx="16.8"
+                cy="113.2"
+                rx="4.4"
+                ry="8.0"
+                fill="#fdfbf4"
+                stroke="#e0d8c7"
+                stroke-width="0.8"
+                transform="rotate(27 16.8 113.2)"
+              />
+              <ellipse
+                cx="28.4"
+                cy="111.3"
+                rx="5.0"
+                ry="7.5"
+                fill="#f4eee0"
+                stroke="#e0d8c7"
+                stroke-width="0.8"
+                transform="rotate(-66 28.4 111.3)"
+              />
+              <ellipse
+                cx="40.8"
+                cy="112.7"
+                rx="4.5"
+                ry="8.0"
+                fill="#f4eee0"
+                stroke="#e0d8c7"
+                stroke-width="0.8"
+                transform="rotate(58 40.8 112.7)"
+              />
+              <ellipse
+                cx="66.2"
+                cy="113.7"
+                rx="4.1"
+                ry="7.4"
+                fill="#fdfbf4"
+                stroke="#e0d8c7"
+                stroke-width="0.8"
+                transform="rotate(17 66.2 113.7)"
+              />
+              <ellipse
+                cx="90.9"
+                cy="111.9"
+                rx="4.3"
+                ry="8.1"
+                fill="#fdfbf4"
+                stroke="#e0d8c7"
+                stroke-width="0.8"
+                transform="rotate(-65 90.9 111.9)"
+              />
+              <ellipse
+                cx="102.1"
+                cy="111.4"
+                rx="4.3"
+                ry="8.5"
+                fill="#f4eee0"
+                stroke="#e0d8c7"
+                stroke-width="0.8"
+                transform="rotate(-7 102.1 111.4)"
+              />
+            </g>
+
+            <!-- little arms, so it can hold things and wave -->
+            <g class="arm arm-l">
+              <path
+                d="M20 106 c-10 5 -15 12 -14 21"
+                fill="none"
+                stroke="#ddd4c0"
+                stroke-width="9.4"
+                stroke-linecap="round"
+              />
+              <path
+                d="M20 106 c-10 5 -15 12 -14 21"
+                fill="none"
+                stroke="#fbf7ee"
+                stroke-width="6.8"
+                stroke-linecap="round"
+              />
+            </g>
+            <g class="arm arm-r">
+              <path
+                d="M100 106 c10 5 15 12 14 21"
+                fill="none"
+                stroke="#ddd4c0"
+                stroke-width="9.4"
+                stroke-linecap="round"
+              />
+              <path
+                d="M100 106 c10 5 15 12 14 21"
+                fill="none"
+                stroke="#fbf7ee"
+                stroke-width="6.8"
+                stroke-linecap="round"
+              />
+            </g>
+
+            <!-- the bowl, over the base of the heap -->
+            <g class="bowl">
+              <path
+                d="M9 118 C12 148 32 166 60 166 C88 166 108 148 111 118 Z"
+                fill="url(#bowlFill)"
+              />
+              <path d="M9 118 a51 12 0 0 0 102 0" fill="url(#rimFill)" />
+              <path
+                d="M9 118 C12 148 32 166 60 166 C88 166 108 148 111 118"
+                fill="none"
+                stroke="#c3c9c4"
+                stroke-width="1.4"
+              />
+              <path
+                d="M9 118 a51 12 0 0 0 102 0"
+                fill="none"
+                stroke="#c3c9c4"
+                stroke-width="1.3"
+              />
+              <path
+                d="M22 133 C25 150 38 160 54 162"
+                fill="none"
+                stroke="#ffffff"
+                stroke-opacity=".85"
+                stroke-width="3.4"
+                stroke-linecap="round"
+              />
+              <ellipse
+                cx="60"
+                cy="167"
+                rx="17"
+                ry="4"
+                fill="#e3e7e3"
+                stroke="#c3c9c4"
+                stroke-width="1.2"
+              />
+            </g>
+
+            <!-- the face sits on the heap, above the rim -->
+            <g id="face"></g>
+          </g>
+        </svg>
+      </div>
+
+      <div id="dev-panel" class="dev-panel" hidden>
+        <label class="dev-field">
+          <span>base</span>
+          <select id="dev-base"></select>
+        </label>
+        <label class="dev-field">
+          <span>overlay</span>
+          <select id="dev-overlay">
+            <option value="none" selected>none</option>
+            <option value="hover">hover</option>
+            <option value="drag">drag</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="tray">
+        <span id="mood" class="mood">asleep</span>
+        <span class="counts">
+          <span class="c ok" title="allowed"> <b id="c-allow">0</b></span>
+          <span class="c stop" title="refused"> <b id="c-block">0</b></span>
+          <span class="c good" title="verified"> <b id="c-verify">0</b></span>
+          <span class="c bad" title="rejected"> <b id="c-reject">0</b></span>
+        </span>
+        <button id="toggle" class="ghost" title="Recent events">log</button>
+        <button id="close" class="ghost" title="Hide Rice">×</button>
+      </div>
+
+      <ol id="log" class="log" hidden></ol>
+    </div>
+
+    <script src="rice.js"></script>
+    <script src="scheduler.js"></script>
+    <script src="renderer.js"></script>
+  </body>
+</html>
