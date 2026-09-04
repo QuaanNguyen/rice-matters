@@ -18,6 +18,7 @@ lerna-debug.log*
 .env.development
 .env.test
 .env.production
+.env.local
 
 # temp directory
 .temp
@@ -28,3 +29,8 @@ lerna-debug.log*
 /demo/work
 /pet/node_modules
 /test/shots
+
+# opencode
+.opencode/
+.DS_Store
+opencode.json
