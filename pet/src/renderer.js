@@ -202,7 +202,10 @@ function say(line, sub, ms = 5200) {
   }, ms);
 }
 
-const scheduler = createReactionScheduler({
+// scheduler.js is an IIFE (it has to be — these are classic scripts sharing one
+// global scope), so it exposes window.RiceScheduler and nothing bare. Calling
+// createReactionScheduler() directly threw on load and took the whole pet with it.
+const scheduler = window.RiceScheduler.createReactionScheduler({
   onShow(e) {
     setState(e.petState);
     const s = speech(e);
@@ -746,6 +749,59 @@ window.__rice = {
 setState("offline");
 scheduleBlink();
 scheduleGlance();
+
+/* ---------------- SSE transport ---------------- */
+
+// The cosmetics rewrite dropped these with the plugin branch, which has no
+// ports — but left the call to connect() in the bootstrap, so the proxy demo
+// died on load with "connect is not defined". Both transports ship now.
+
+async function pollMood(base) {
+  try {
+    const r = await fetch(`${base}/state`, { cache: 'no-store' });
+    if (!r.ok) return;
+    const st = await r.json();
+    const level = st.mood?.level || 'content';
+    if (rendered() !== 'sleeping' && rendered() !== 'offline') moodEl.textContent = level;
+    counters.allow.textContent = st.mood?.allowed ?? 0;
+    counters.block.textContent = st.mood?.blocked ?? 0;
+    counters.verify.textContent = st.mood?.verified ?? 0;
+    counters.reject.textContent = st.mood?.rejected ?? 0;
+  } catch { /* assay not up */ }
+}
+
+function connect(base) {
+  let es, reconnectTimer = null;
+
+  const open = () => {
+    es = new EventSource(`${base}/events`);
+
+    es.onopen = () => {
+      connected = true;
+      if (baseState === 'offline') { setState('calm'); moodEl.textContent = 'watching'; }
+      nudgeAwake();
+    };
+
+    es.onmessage = (msg) => {
+      let e; try { e = JSON.parse(msg.data); } catch { return; }
+      handle(e);
+    };
+
+    es.onerror = () => {
+      es.close();
+      connected = false;
+      clearTimeout(quietTimer);
+      setState('offline');
+      moodEl.textContent = 'asleep';
+      clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(open, 2000);
+    };
+  };
+
+  open();
+  pollMood(base);
+  setInterval(() => pollMood(base), 3000);
+}
 
 window.rice.config().then((cfg) => {
   if (cfg.toggleKey) toggleKey = cfg.toggleKey;

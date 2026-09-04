@@ -105,7 +105,21 @@ function isIdle(event) {
   return status === "idle" || status?.type === "idle";
 }
 
+// The plugin runs inside OpenCode, which is a Bun binary, so require() of the
+// electron package is not a reliable way to get the executable path — it works
+// under Node and silently returns nothing here, which is why Rice stopped
+// appearing while the run record kept filling. Look on disk first.
+const DIST_CANDIDATES = [
+  "node_modules/electron/dist/electron.exe",
+  "node_modules/electron/dist/electron",
+  "node_modules/electron/dist/Electron.app/Contents/MacOS/Electron",
+];
+
 function electronBinary(petDir) {
+  for (const rel of DIST_CANDIDATES) {
+    const candidate = path.join(petDir, rel);
+    if (fs.existsSync(candidate)) return candidate;
+  }
   const pkg = path.join(petDir, "node_modules/electron");
   if (!fs.existsSync(pkg)) return null;
   try {
