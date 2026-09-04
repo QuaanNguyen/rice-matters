@@ -77,7 +77,11 @@ function createSession(opts = {}) {
   }
 
   function permission(event) {
-    if (event.action === 'grep' || event.action === 'question' || event.action === 'skill' || event.action === 'subagent') {
+    // question, skill and subagent are OpenCode's own meta-tools: they touch no
+    // file and there is nothing to check. grep used to sit in this list too, and
+    // that was a hole — it reads file contents at a path, so 'read ../otherlab'
+    // was refused while 'grep ../otherlab' went through ungated and unrecorded.
+    if (event.action === 'question' || event.action === 'skill' || event.action === 'subagent') {
       return { events: [] };
     }
 

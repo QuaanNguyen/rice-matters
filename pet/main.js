@@ -39,6 +39,14 @@ const TOGGLE_KEY = arg('shortcut', 'CommandOrControl+Alt+R');
 // The sizing maths lives in its own file with no Electron in it, so the test
 // suite can check it. See test/run-tests.js.
 const G = require('./geometry');
+
+// One Rice, ever. The OpenCode plugin calls launchPet() on every session, so
+// without this you get a second window sitting exactly on top of the first at
+// the same saved position — which looks like Rice duplicating the moment you
+// drag one off the other. Worse, globalShortcut.register only succeeds for the
+// first process, so the second window ignores Ctrl+Alt+R and the resize keys.
+const isPrimary = app.requestSingleInstanceLock();
+if (!isPrimary) app.quit();
 const { watchInbox } = require('../assay/lib/events');
 const { BASE_W, BASE_H, DEFAULT_SCALE, clampScale } = G;
 
@@ -250,7 +258,14 @@ function startInboxWatch() {
 
 /* ---------------- lifecycle ---------------- */
 
-app.whenReady().then(() => {
+// Someone started Rice again (a new OpenCode session): show the one we have.
+app.on('second-instance', () => {
+  if (!win || win.isDestroyed()) return;
+  settings.hidden = false;
+  win.showInactive();
+});
+
+if (isPrimary) app.whenReady().then(() => {
   loadSettings();
   create();
   registerShortcuts();
