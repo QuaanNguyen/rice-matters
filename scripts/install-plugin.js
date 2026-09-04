@@ -32,7 +32,7 @@ function run(cmd, args, cwd) {
     cwd,
     stdio: 'inherit',
     env: installEnv(),
-    shell: process.platform === 'win32',
+    shell: process.platform === 'win32' && /\.(cmd|bat)$/i.test(cmd),
   });
   if (result.status !== 0) {
     throw new Error(cmd + ' ' + args.join(' ') + ' failed in ' + cwd + ' (exit ' + result.status + ')');
