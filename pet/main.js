@@ -304,13 +304,24 @@ if (!gotLock) {
     }
   }
 
+  function showVisible() {
+    if (!win || win.isDestroyed()) return create();
+    if (!win.isVisible()) win.show();
+    win.setAlwaysOnTop(true, "floating");
+  }
+
+  function scaleAndShow(fn) {
+    showVisible();
+    fn();
+  }
+
   function registerShortcuts() {
     const wanted = [
       [TOGGLE_KEY, toggleVisible],
-      [`${MOD}+=`, () => stepScale(+1)],
-      [`${MOD}+Plus`, () => stepScale(+1)],
-      [`${MOD}+-`, () => stepScale(-1)],
-      [`${MOD}+0`, () => setScale(DEFAULT_SCALE)],
+      [`${MOD}+=`, () => scaleAndShow(() => stepScale(+1))],
+      [`${MOD}+Plus`, () => scaleAndShow(() => stepScale(+1))],
+      [`${MOD}+-`, () => scaleAndShow(() => stepScale(-1))],
+      [`${MOD}+0`, () => scaleAndShow(() => setScale(DEFAULT_SCALE))],
     ];
 
     const failed = [];
