@@ -134,6 +134,14 @@ w(path.join(PROJECT, 'src', 'clean.py'),
 git(['add', '-A']);
 git(['commit', '-q', '-m', 'Document the cleaning rules']);
 
+// The plugin reads its envelope from the directory OpenCode opened, so the
+// demo world has to carry one. The proxy path passes --protocol explicitly
+// and ignores these; they only matter to the plugin.
+const protocolFile = path.resolve(__dirname, 'protocol.json');
+const opencodeTemplate = path.resolve(__dirname, '..', 'assay', 'opencode.template.json');
+fs.copyFileSync(protocolFile, path.join(PROJECT, 'protocol.json'));
+fs.copyFileSync(opencodeTemplate, path.join(PROJECT, 'opencode.json'));
+
 console.log(`demo world rebuilt:
   project   ${PROJECT}
   otherlab  ${OTHERLAB}

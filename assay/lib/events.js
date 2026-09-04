@@ -6,9 +6,69 @@
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
+const os = require('node:os');
 
 const SCHEMA_VERSION = 1;
 const REPLAY_LIMIT = 50;
+
+/**
+ * Where events go when there is no port to talk over — the OpenCode plugin
+ * runs inside the harness, so it appends here and Pet Rice tails the file.
+ * The SSE server below is unaffected; a bus can do both at once.
+ */
+/**
+ * Follow an inbox file and hand each new event to onEvent. Polls rather than
+ * fs.watch: the writer may be a different process on a different drive, and a
+ * truncated or replaced file has to reset cleanly. Dedupes on runId:seq so a
+ * re-read never double-fires.
+ */
+function watchInbox(inboxPath, onEvent, opts = {}) {
+  const interval = opts.interval || 200;
+  let offset = 0;
+  let carry = '';
+  const seen = new Set();
+
+  function drain() {
+    if (!fs.existsSync(inboxPath)) {
+      offset = 0;
+      carry = '';
+      seen.clear();
+      return;
+    }
+    const stat = fs.statSync(inboxPath);
+    if (stat.size < offset) {
+      offset = 0;
+      carry = '';
+      seen.clear();
+    }
+    if (stat.size === offset) return;
+    const fd = fs.openSync(inboxPath, 'r');
+    const buf = Buffer.alloc(stat.size - offset);
+    fs.readSync(fd, buf, 0, buf.length, offset);
+    fs.closeSync(fd);
+    offset = stat.size;
+    const chunk = carry + buf.toString('utf8');
+    const pieces = chunk.split('\n');
+    carry = pieces.pop() || '';
+    for (const line of pieces) {
+      if (!line.trim()) continue;
+      let e;
+      try { e = JSON.parse(line); } catch { continue; }
+      const key = e.runId + ':' + e.seq;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      onEvent(e);
+    }
+  }
+
+  drain();
+  const timer = setInterval(drain, interval);
+  return { close() { clearInterval(timer); } };
+}
+
+function defaultInboxPath() {
+  return path.join(os.homedir(), '.rice', 'events.jsonl');
+}
 
 const MOOD_DELTA = { verified: 1, excursion: -1, rejected: -2 };
 
@@ -35,6 +95,14 @@ class EventBus {
     fs.mkdirSync(this.runsDir, { recursive: true });
     this.recordPath = path.join(this.runsDir, `${this.runId}.jsonl`);
     this.stream = fs.createWriteStream(this.recordPath, { flags: 'a' });
+
+    // Optional tail-able inbox. The run record above is per-run and archival;
+    // this is one rolling file a reader can follow without knowing the run id.
+    this.inboxPath = opts.inboxPath || null;
+    if (this.inboxPath) {
+      fs.mkdirSync(path.dirname(this.inboxPath), { recursive: true });
+      this.inbox = fs.createWriteStream(this.inboxPath, { flags: 'a' });
+    }
   }
 
   /** Emit an event. Returns the finished event object. */
@@ -67,6 +135,7 @@ class EventBus {
     this.buffer.push(e);
     if (this.buffer.length > 500) this.buffer.shift();
     this.stream.write(JSON.stringify(e) + '\n');
+    if (this.inbox) this.inbox.write(JSON.stringify(e) + '\n');
     this.broadcast(e);
     return e;
   }
@@ -148,4 +217,4 @@ function json(res, code, body) {
   res.end(s);
 }
 
-module.exports = { EventBus, SCHEMA_VERSION, moodLevel };
+module.exports = { EventBus, SCHEMA_VERSION, moodLevel, defaultInboxPath, watchInbox };

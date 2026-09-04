@@ -30,11 +30,16 @@ const arg = (name, fallback) => {
   return hit ? hit.split('=').slice(1).join('=') : fallback;
 };
 const EVENTS_URL = arg('events', 'http://127.0.0.1:4599');
+// Plugin mode: ASSAY is inside OpenCode, so there is no server to subscribe
+// to — it names a file instead and we follow that. The SSE URL stays the
+// default, so nothing changes for the proxy demo.
+const EVENTS_FILE = process.env.RICE_EVENTS || (/^https?:/i.test(EVENTS_URL) ? null : EVENTS_URL);
 const TOGGLE_KEY = arg('shortcut', 'CommandOrControl+Alt+R');
 
 // The sizing maths lives in its own file with no Electron in it, so the test
 // suite can check it. See test/run-tests.js.
 const G = require('./geometry');
+const { watchInbox } = require('../assay/lib/events');
 const { BASE_W, BASE_H, DEFAULT_SCALE, clampScale } = G;
 
 let win = null;
@@ -219,7 +224,7 @@ function registerShortcuts() {
 /* ---------------- ipc ---------------- */
 
 ipcMain.handle('rice:config', () => ({
-  eventsUrl: EVENTS_URL, demo: DEMO, solid: SOLID,
+  eventsUrl: EVENTS_URL, eventsFile: EVENTS_FILE, demo: DEMO, solid: SOLID,
   scale: settings.scale, toggleKey: TOGGLE_KEY.replace('CommandOrControl', 'Ctrl'),
 }));
 ipcMain.on('rice:quit', () => app.quit());
@@ -229,12 +234,27 @@ ipcMain.on('rice:log', (_e, open) => { logOpen = !!open; applyLayout(); });
 ipcMain.on('rice:scale-step', (_e, dir) => stepScale(dir > 0 ? 1 : -1));
 ipcMain.on('rice:scale-set', (_e, s) => setScale(s));
 
+/* ---------------- plugin-mode transport ---------------- */
+
+// There is no server in plugin mode: ASSAY runs inside OpenCode and appends
+// to a file. Follow it here and push each event at the renderer, which uses
+// the same handle() it uses for SSE.
+let inboxWatcher = null;
+function startInboxWatch() {
+  if (!EVENTS_FILE || inboxWatcher) return;
+  inboxWatcher = watchInbox(EVENTS_FILE, (e) => {
+    if (win && !win.isDestroyed()) win.webContents.send('rice:event', e);
+  });
+  console.log(`  following ${EVENTS_FILE}`);
+}
+
 /* ---------------- lifecycle ---------------- */
 
 app.whenReady().then(() => {
   loadSettings();
   create();
   registerShortcuts();
+  startInboxWatch();
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) create(); });
 });
 

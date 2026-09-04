@@ -417,5 +417,13 @@ scheduleGlance();
 window.rice.config().then((cfg) => {
   if (cfg.toggleKey) toggleKey = cfg.toggleKey;
   if (cfg.demo) return runDemo();
+  if (cfg.eventsFile) {
+    // Plugin mode: main is tailing the inbox and pushing each line here.
+    // Same handle(), same states — only the transport differs.
+    connected = true;
+    moodEl.textContent = 'watching';
+    window.rice.onEvent((e) => handle(e));
+    return;
+  }
   connect(cfg.eventsUrl.replace(/\/+$/, ''));
 });
